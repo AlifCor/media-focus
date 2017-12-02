@@ -1,1 +1,399 @@
-Hello World
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+        <title>Data visualization : news and sources of news</title>
+        <meta name="description" content="Data visualization : news and sources of news">
+        <meta name="author" content="Delisle, Kulovic, Hosseiny">
+
+        <link rel="stylesheet" type="text/css" href="style.css">
+
+        <link
+            rel="stylesheet"
+            href="cdn/leaflet.css"
+        />
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="cdn/dist/LeafletStyleSheet.css">
+
+    </head>
+
+    <body>
+        <div id="main_container">
+            <div id="side_country_details">
+                <svg id="container_sankey">
+
+                </svg>
+                <div id="country_close_btn">
+                    <i id="icon_ccb" class="fa fa-arrow-left"></i>
+                </div>
+
+            </div>
+            <div id="container_map">
+
+            </div>
+            <div id="side_events">
+
+            </div>
+        </div>
+
+        <script
+            src="cdn/leaflet.js">
+        </script>
+
+        <script
+            src="cdn/leaflet-heat.js">
+        </script>
+
+        <script src="cdn/d3/d3.min.js"></script>
+        <script src="cdn/d3-sankey/d3-sankey.js"></script>
+        <script src="cdn/jquery-3.2.1.min.js"></script>
+        <script src="cdn/dist/PruneCluster.js"></script>
+        <script>
+            // Here we declare the general DOM references
+            let sideEventsDrawer = document.getElementById("side_events");
+            let sideCountryDetails = document.getElementById("side_country_details");
+            let containerMap = document.getElementById("container_map");
+            let countryCloseBtn = document.getElementById("country_close_btn");
+
+            // Here are the "global variables" for our document
+            let showEventSideMenu = false;
+
+
+            // Some general functions:
+
+            /**
+            *   Used to switch the events filtering side drawer.
+            *   @arg open : Boolean
+            */
+            function switchEventSideMenu(open){
+                showEventSideMenu = open;
+                if(open){
+                    sideEventsDrawer.style.width = "20%";
+                } else {
+                    sideEventsDrawer.style.width = "1%";
+                }
+            }
+
+            function showCountryDetails(countryCode){
+                selectedCountry = countryCode;
+                sideCountryDetails.style.marginLeft = "0%";
+                showSankeyMap();
+            }
+
+            function closeCountryDetails(){
+                sideCountryDetails.style.marginLeft = "-40%";
+            }
+
+            // Some general events listeners:
+            sideEventsDrawer.addEventListener("mouseenter", function(event){
+                if(!showEventSideMenu){
+                    switchEventSideMenu(true);
+                }
+            })
+
+            sideEventsDrawer.addEventListener("mouseleave", function(event) {
+                if(showEventSideMenu){
+                    switchEventSideMenu(false);
+                }
+            })
+
+            countryCloseBtn.addEventListener("click", closeCountryDetails);
+
+            let map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);;
+
+            let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+                attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+                maxZoom: 18,
+                id: 'mapbox.streets',
+                accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
+                })
+            tileLayer.addTo(map);
+
+            map._initPathRoot();
+            let svg = d3.select("#container_map").select("svg"),
+	           g = svg.append("g");
+
+            d3.csv("november_lat_long_eventcode.csv", function(data) {
+   		           /* Add a LatLng object to each item in the dataset */
+                let pruneCluster = new PruneClusterForLeaflet();
+                data.forEach(row => {
+                    const marker = new PruneCluster.Marker(row["ActionGeo_Lat"], row["ActionGeo_Long"]);
+                    pruneCluster.RegisterMarker(marker);
+                })
+
+                map.addLayer(pruneCluster);
+   	        })
+
+            let geoJSONData = "data/custom.geo.json";
+            let customStyle = {
+                stroke: true,
+                weight: 1.2,
+                zIndex: 1,
+                fill: true,
+                fillColor: "black",
+                fillOpacity: 0.2,
+            }
+
+            function clickFeature(e, properties){
+                let layer = e.target;
+                showCountryDetails(properties["iso_a3"]);
+            }
+
+            function onEachFeature(feature, layer){
+                layer.on({
+                    click: (e) => clickFeature(e, feature.properties),
+                });
+            }
+
+            $.get(geoJSONData, function(data){
+
+                L.geoJson(data, {
+                    clickable: true,
+                    style: customStyle,
+                    onEachFeature: onEachFeature,
+                }).addTo(map);
+            })
+
+            /*
+
+            let heat;
+
+            let eventShowing = [];
+            let eventCodes;
+            let selectedEventCodes = [];
+            */
+            let countriesMentions = {};
+            const defaultCountry = "USA";
+
+            let selectedCountry = defaultCountry;
+
+            function showSankeyMap(){
+                d3.select("#container_sankey").selectAll("svg > *").remove();
+                let selectionSankeyContainer = d3.select("#container_sankey");
+                let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
+
+                let svg = d3.select("svg"),
+                    width = bboxSankeyContainer.width;
+                    height = bboxSankeyContainer.height;
+
+                svg.attr("width", width)
+                    .attr("height", height);
+
+                let formatNumber = d3.format(",.0f"),
+                    format = function(d) { return formatNumber(d) + " TWh"; },
+                    color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                let sankey = d3.sankey()
+                    .nodeWidth(15)
+                    .nodePadding(10)
+                    .extent([[1, 1], [width - 1, height - 6]]);
+
+                let link = svg.append("g")
+                    .attr("class", "links")
+                    .attr("fill", "none")
+                    .attr("stroke", "#000")
+                    .attr("stroke-opacity", 0.2)
+                  .selectAll("path");
+
+                let node = svg.append("g")
+                    .attr("class", "nodes")
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", 10)
+                  .selectAll("g");
+
+                let selectedMentions = {};
+                let reverseSelectedMentions = {};
+
+                countriesMentions.forEach(sourceTarget => {
+                    const sourceCountry = sourceTarget[0];
+                    const targets = sourceTarget[1];
+                    targets.forEach(target => {
+                        const targetCountry = target[0];
+                        const value = target[1];
+                        if(targetCountry === selectedCountry){
+                            reverseSelectedMentions[sourceCountry] = value;
+                        } else if(sourceCountry == selectedCountry){
+                            selectedMentions[targetCountry] = value;
+                        }
+                    });
+                })
+
+                reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
+                // Normalizing reverseSelectedMentions:
+                const sumRSM = reverseSelectedMentions.reduce((sum, elem) => sum + elem[1], 0);
+                reverseSelectedMentions = reverseSelectedMentions.map(elem => [elem[0], elem[1] / sumRSM]);
+                const reverseNodes = reverseSelectedMentions.map(elem => {
+                    return {name: elem[0]};
+                })
+                const reverseLinks = reverseSelectedMentions.map((elem, index) => {
+                    return {source: index, target: reverseNodes.length, value: elem[1]};
+                })
+
+                selectedMentions = Object.entries(selectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
+                // Normalizing reverseSelectedMentions:
+                const sumSM = selectedMentions.reduce((sum, elem) => sum + elem[1], 0);
+                selectedMentions = selectedMentions.map(elem => [elem[0], elem[1] / sumSM]);
+                let rightNodes = selectedMentions.map(elem => {
+                    return {name: elem[0]};
+                });
+                const rightLinks = selectedMentions.map((elem, index) => {
+                    return {source: reverseNodes.length, target: index + reverseNodes.length + 1, value: elem[1]}
+                });
+
+                const nodes = reverseNodes.concat([{name: selectedCountry}]).concat(rightNodes);
+                const links = reverseLinks.concat(rightLinks);
+
+                let exampleGraph = {
+                    nodes: nodes,
+                    links: links
+                };
+
+                sankey(exampleGraph);
+
+                link = link
+                .data(exampleGraph.links)
+                .enter().append("path")
+                  .attr("d", d3.sankeyLinkHorizontal())
+                  .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+
+                link.append("title")
+                  .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+
+                node = node
+                .data(exampleGraph.nodes)
+                .enter().append("g");
+
+                node.append("rect")
+                  .attr("x", function(d) { return d.x0; })
+                  .attr("y", function(d) { return d.y0; })
+                  .attr("height", function(d) { return d.y1 - d.y0; })
+                  .attr("width", function(d) { return d.x1 - d.x0; })
+
+                  .attr("stroke", "#000");
+
+                node.append("text")
+                  .attr("x", function(d) { return d.x0 - 6; })
+                  .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
+                  .attr("dy", "0.35em")
+                  .attr("text-anchor", "end")
+                  .text(function(d) { return d.name; })
+                .filter(function(d) { return d.x0 < width / 2; })
+                  .attr("x", function(d) { return d.x1 + 6; })
+                  .attr("text-anchor", "start");
+
+                node.append("title")
+                  .text(function(d) { return d.name + "\n" + format(d.value); });
+            }
+
+            function showBubblemap(){
+
+            }
+
+            function preprocessMentions(){
+                d3.csv('november_lat_long_eventcode.csv', function(data){
+
+                    function isANumber(number){
+                        return !isNaN(parseFloat(number))
+                    }
+
+                    /*
+                    if(heat){
+                        map.removeLayer(heat);
+                    }
+                    */
+
+                    data.forEach((row) => {
+
+                            // We take advantage of the filter to construct the countriesMentions object:
+                            const sourceCountry = row["SOURCE_CountryCode"];
+                            const eventCountry = row["ActionGeo_CountryCode"];
+                            if(!(sourceCountry in countriesMentions)){
+                                countriesMentions[sourceCountry] = {};
+                            }
+                            if(!(eventCountry in countriesMentions[sourceCountry])){
+                                countriesMentions[sourceCountry][eventCountry] = 0;
+                            }
+
+                            countriesMentions[sourceCountry][eventCountry] += 1;
+
+                            //return selectedEventCodes.indexOf(row["EventRootCode"].slice(0, 2)) >= 0
+                        })
+                        //.map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
+
+                    countriesMentions = Object.keys(countriesMentions).map(sourceCountry => {
+                        const currentSTArray = Object.keys(countriesMentions[sourceCountry]);
+                        const sumMentions = currentSTArray.reduce((sum, targetCountry) => {
+                            return sum + countriesMentions[sourceCountry][targetCountry];
+                        }, 0);
+                        return [sourceCountry, currentSTArray.map(country => [country, countriesMentions[sourceCountry][country] / sumMentions])];
+                    });
+
+                    /*
+                    heat = L.heatLayer(filteredGeoPoints, {
+                        radius: 15,
+                        blur: 15,
+                        maxZoom: 17,
+                    }).addTo(map);
+                    */
+                })
+            }
+
+            d3.tsv("CAMEO.eventcodes.txt", function(data) {
+                eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
+                selectedEventCodes = eventCodes.map(cameoElem => cameoElem.CAMEOEVENTCODE);
+                let containerEventSelection = document.getElementById("side_events");
+
+                eventCodes.forEach((cameoElem, index) => {
+                    let checkboxContainer = document.createElement("div");
+                    let checkboxElem = document.createElement("input");
+                    checkboxElem.setAttribute("type", "checkbox");
+                    checkboxElem.setAttribute("checked", true);
+                    checkboxElem.onchange = function(){
+                        if(checkboxElem.checked && selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE) < 0){
+                            selectedEventCodes.push(cameoElem.CAMEOEVENTCODE);
+                        } else if(!checkboxElem.checked){
+                            let indexElem = selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE);
+                            if(indexElem >= 0){
+                                selectedEventCodes.splice(indexElem, 1);
+                            }
+                        }
+                    }
+                    checkboxContainer.appendChild(checkboxElem);
+
+                    let checkboxLabel = document.createElement("label");
+                    checkboxLabel.classList.add("label_event_checkbox");
+                    checkboxLabel.innerHTML = cameoElem.EVENTDESCRIPTION;
+                    checkboxContainer.appendChild(checkboxLabel);
+
+                    containerEventSelection.appendChild(checkboxContainer);
+                })
+            })
+            /*
+
+            function fipsCountriesProcessing(){
+                let selectCountry = document.getElementById("select_country")
+                d3.csv("frame_fips.csv", function(data){
+                    data.sort((a, b) => a["Country"] > b["Country"])
+                    .forEach(row => {
+                        let optionCountry = document.createElement("option");
+                        optionCountry.setAttribute("value", row["FIPS"]);
+                        optionCountry.innerHTML = row["Country"];
+                        selectCountry.appendChild(optionCountry);
+                    })
+
+                    selectCountry.value = defaultCountry;
+                })
+
+                selectCountry.addEventListener("change", () => {
+                    selectedCountry = selectCountry.value;
+                    showSankeyMap();
+                })
+            }
+            */
+            preprocessMentions();
+        </script>
+    </body>
+</html>

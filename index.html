@@ -208,121 +208,148 @@
             let selectedCountry = defaultCountry;
 
             function showSankeyMap(){
-                d3.select("#container_sankey").selectAll("svg > *").remove();
-                let selectionSankeyContainer = d3.select("#container_sankey");
-                let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
+                d3.csv("november_lat_long_eventcode.csv", (data) => {
+                    data.forEach((row) => {
 
-                let svg = d3.select("svg"),
-                    width = bboxSankeyContainer.width;
-                    height = bboxSankeyContainer.height;
+                            // We take advantage of the filter to construct the countriesMentions object:
+                            const sourceCountry = row["SOURCE_CountryCode"];
+                            const eventCountry = row["ActionGeo_CountryCode"];
+                            if(!(sourceCountry in countriesMentions)){
+                                countriesMentions[sourceCountry] = {};
+                            }
+                            if(!(eventCountry in countriesMentions[sourceCountry])){
+                                countriesMentions[sourceCountry][eventCountry] = 0;
+                            }
 
-                svg.attr("width", width)
-                    .attr("height", height);
+                            countriesMentions[sourceCountry][eventCountry] += 1;
 
-                let formatNumber = d3.format(",.0f"),
-                    format = function(d) { return formatNumber(d) + " TWh"; },
-                    color = d3.scaleOrdinal(d3.schemeCategory10);
+                            //return selectedEventCodes.indexOf(row["EventRootCode"].slice(0, 2)) >= 0
+                        })
+                        //.map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
 
-                let sankey = d3.sankey()
-                    .nodeWidth(15)
-                    .nodePadding(10)
-                    .extent([[1, 1], [width - 1, height - 6]]);
-
-                let link = svg.append("g")
-                    .attr("class", "links")
-                    .attr("fill", "none")
-                    .attr("stroke", "#000")
-                    .attr("stroke-opacity", 0.2)
-                  .selectAll("path");
-
-                let node = svg.append("g")
-                    .attr("class", "nodes")
-                    .attr("font-family", "sans-serif")
-                    .attr("font-size", 10)
-                  .selectAll("g");
-
-                let selectedMentions = {};
-                let reverseSelectedMentions = {};
-
-                countriesMentions.forEach(sourceTarget => {
-                    const sourceCountry = sourceTarget[0];
-                    const targets = sourceTarget[1];
-                    targets.forEach(target => {
-                        const targetCountry = target[0];
-                        const value = target[1];
-                        if(targetCountry === selectedCountry){
-                            reverseSelectedMentions[sourceCountry] = value;
-                        } else if(sourceCountry == selectedCountry){
-                            selectedMentions[targetCountry] = value;
-                        }
+                    countriesMentions = Object.keys(countriesMentions).map(sourceCountry => {
+                        const currentSTArray = Object.keys(countriesMentions[sourceCountry]);
+                        const sumMentions = currentSTArray.reduce((sum, targetCountry) => {
+                            return sum + countriesMentions[sourceCountry][targetCountry];
+                        }, 0);
+                        return [sourceCountry, currentSTArray.map(country => [country, countriesMentions[sourceCountry][country] / sumMentions])];
                     });
-                })
+                    d3.select("#container_sankey").selectAll("svg > *").remove();
+                    let selectionSankeyContainer = d3.select("#container_sankey");
+                    let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
 
-                reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
-                // Normalizing reverseSelectedMentions:
-                const sumRSM = reverseSelectedMentions.reduce((sum, elem) => sum + elem[1], 0);
-                reverseSelectedMentions = reverseSelectedMentions.map(elem => [elem[0], elem[1] / sumRSM]);
-                const reverseNodes = reverseSelectedMentions.map(elem => {
-                    return {name: elem[0]};
-                })
-                const reverseLinks = reverseSelectedMentions.map((elem, index) => {
-                    return {source: index, target: reverseNodes.length, value: elem[1]};
-                })
+                    let svg = d3.select("svg"),
+                        width = bboxSankeyContainer.width;
+                        height = bboxSankeyContainer.height;
 
-                selectedMentions = Object.entries(selectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
-                // Normalizing reverseSelectedMentions:
-                const sumSM = selectedMentions.reduce((sum, elem) => sum + elem[1], 0);
-                selectedMentions = selectedMentions.map(elem => [elem[0], elem[1] / sumSM]);
-                let rightNodes = selectedMentions.map(elem => {
-                    return {name: elem[0]};
-                });
-                const rightLinks = selectedMentions.map((elem, index) => {
-                    return {source: reverseNodes.length, target: index + reverseNodes.length + 1, value: elem[1]}
-                });
+                    svg.attr("width", width)
+                        .attr("height", height);
 
-                const nodes = reverseNodes.concat([{name: selectedCountry}]).concat(rightNodes);
-                const links = reverseLinks.concat(rightLinks);
+                    let formatNumber = d3.format(",.0f"),
+                        format = function(d) { return formatNumber(d) + " TWh"; },
+                        color = d3.scaleOrdinal(d3.schemeCategory10);
 
-                let exampleGraph = {
-                    nodes: nodes,
-                    links: links
-                };
+                    let sankey = d3.sankey()
+                        .nodeWidth(15)
+                        .nodePadding(10)
+                        .extent([[1, 1], [width - 1, height - 6]]);
 
-                sankey(exampleGraph);
+                    let link = svg.append("g")
+                        .attr("class", "links")
+                        .attr("fill", "none")
+                        .attr("stroke", "#000")
+                        .attr("stroke-opacity", 0.2)
+                      .selectAll("path");
 
-                link = link
-                .data(exampleGraph.links)
-                .enter().append("path")
-                  .attr("d", d3.sankeyLinkHorizontal())
-                  .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+                    let node = svg.append("g")
+                        .attr("class", "nodes")
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 10)
+                      .selectAll("g");
 
-                link.append("title")
-                  .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+                    let selectedMentions = {};
+                    let reverseSelectedMentions = {};
 
-                node = node
-                .data(exampleGraph.nodes)
-                .enter().append("g");
+                    countriesMentions.forEach(sourceTarget => {
+                        const sourceCountry = sourceTarget[0];
+                        const targets = sourceTarget[1];
+                        targets.forEach(target => {
+                            const targetCountry = target[0];
+                            const value = target[1];
+                            if(targetCountry === selectedCountry){
+                                reverseSelectedMentions[sourceCountry] = value;
+                            } else if(sourceCountry == selectedCountry){
+                                selectedMentions[targetCountry] = value;
+                            }
+                        });
+                    })
 
-                node.append("rect")
-                  .attr("x", function(d) { return d.x0; })
-                  .attr("y", function(d) { return d.y0; })
-                  .attr("height", function(d) { return d.y1 - d.y0; })
-                  .attr("width", function(d) { return d.x1 - d.x0; })
+                    reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
+                    // Normalizing reverseSelectedMentions:
+                    const sumRSM = reverseSelectedMentions.reduce((sum, elem) => sum + elem[1], 0);
+                    reverseSelectedMentions = reverseSelectedMentions.map(elem => [elem[0], elem[1] / sumRSM]);
+                    const reverseNodes = reverseSelectedMentions.map(elem => {
+                        return {name: elem[0]};
+                    })
+                    const reverseLinks = reverseSelectedMentions.map((elem, index) => {
+                        return {source: index, target: reverseNodes.length, value: elem[1]};
+                    })
 
-                  .attr("stroke", "#000");
+                    selectedMentions = Object.entries(selectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
+                    // Normalizing reverseSelectedMentions:
+                    const sumSM = selectedMentions.reduce((sum, elem) => sum + elem[1], 0);
+                    selectedMentions = selectedMentions.map(elem => [elem[0], elem[1] / sumSM]);
+                    let rightNodes = selectedMentions.map(elem => {
+                        return {name: elem[0]};
+                    });
+                    const rightLinks = selectedMentions.map((elem, index) => {
+                        return {source: reverseNodes.length, target: index + reverseNodes.length + 1, value: elem[1]}
+                    });
 
-                node.append("text")
-                  .attr("x", function(d) { return d.x0 - 6; })
-                  .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
-                  .attr("dy", "0.35em")
-                  .attr("text-anchor", "end")
-                  .text(function(d) { return d.name; })
-                .filter(function(d) { return d.x0 < width / 2; })
-                  .attr("x", function(d) { return d.x1 + 6; })
-                  .attr("text-anchor", "start");
+                    const nodes = reverseNodes.concat([{name: selectedCountry}]).concat(rightNodes);
+                    const links = reverseLinks.concat(rightLinks);
 
-                node.append("title")
-                  .text(function(d) { return d.name + "\n" + format(d.value); });
+                    let exampleGraph = {
+                        nodes: nodes,
+                        links: links
+                    };
+
+                    sankey(exampleGraph);
+
+                    link = link
+                    .data(exampleGraph.links)
+                    .enter().append("path")
+                      .attr("d", d3.sankeyLinkHorizontal())
+                      .attr("stroke-width", function(d) { return Math.max(1, d.width); });
+
+                    link.append("title")
+                      .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+
+                    node = node
+                    .data(exampleGraph.nodes)
+                    .enter().append("g");
+
+                    node.append("rect")
+                      .attr("x", function(d) { return d.x0; })
+                      .attr("y", function(d) { return d.y0; })
+                      .attr("height", function(d) { return d.y1 - d.y0; })
+                      .attr("width", function(d) { return d.x1 - d.x0; })
+
+                      .attr("stroke", "#000");
+
+                    node.append("text")
+                      .attr("x", function(d) { return d.x0 - 6; })
+                      .attr("y", function(d) { return (d.y1 + d.y0) / 2; })
+                      .attr("dy", "0.35em")
+                      .attr("text-anchor", "end")
+                      .text(function(d) { return d.name; })
+                    .filter(function(d) { return d.x0 < width / 2; })
+                      .attr("x", function(d) { return d.x1 + 6; })
+                      .attr("text-anchor", "start");
+
+                    node.append("title")
+                      .text(function(d) { return d.name + "\n" + format(d.value); });
+                })                
             }
 
             function showBubblemap(){
@@ -430,7 +457,7 @@
                 })
             }
             */
-            preprocessMentions();
+            //preprocessMentions();
         </script>
     </body>
 </html>

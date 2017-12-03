@@ -32,15 +32,17 @@
 }
 
 #side_menu {
-    width: 1%;
     background-color: white;
     z-index: 1;
     height: 100%;
     position: absolute;
+    width: 200px;
     top: 0;
-    right: 0;
+    right: -200px;
     transition: 0.2s;
 }
+
+
 
 #side_events {
     background-color: white;

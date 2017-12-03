@@ -65,6 +65,21 @@
 
     // Some general functions:
 
+    function upperFirstLetters(str) {
+        return str
+            .toLowerCase()
+            .split(' ')
+            .map((w) => {
+                if (w.length > 2) {
+                    return w[0].toUpperCase() + w.substr(1);
+                }
+                else {
+                    return w;
+                }
+            })
+            .join(' ');
+    }
+
     /**
      *   Used to switch the events filtering side drawer.
      *   @arg open : Boolean
@@ -452,7 +467,7 @@
         const topEvents = [... new Set(eventCodes.map(event => event.CAMEOEVENTCODE.charAt(0)))];
 
         topEvents.forEach((cameoElem, index) => {
-            $("<h3>GROUP-" + index + "</h3>").attr("id", "section-events-" + cameoElem).appendTo(containerEventSelection);
+            $("<h3>Group-" + index + "</h3>").attr("id", "section-events-" + cameoElem).appendTo(containerEventSelection);
             //const containerDiv = $("<div/>")
             //$("<fieldset/>").attr("id", "events-" + cameoElem).appendTo(containerDiv);
             //containerDiv.appendTo(containerEventSelection);
@@ -480,7 +495,7 @@
                 }
             ).appendTo(container);
 
-            $("<label>" + cameoElem.EVENTDESCRIPTION + "</label>").attr({
+            $("<label>" + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
                 "for": id,
                 "class": "label_event_checkbox"
             }).appendTo(container);

@@ -10,13 +10,9 @@
 
         <link rel="stylesheet" type="text/css" href="style.css">
 
-        <link
-            rel="stylesheet"
-            href="cdn/leaflet.css"
-        />
-
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-        <link rel="stylesheet" href="cdn/dist/LeafletStyleSheet.css">
+        <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
 
     </head>
 
@@ -38,10 +34,6 @@
 
             </div>
         </div>
-
-        <script
-            src="cdn/leaflet.js">
-        </script>
 
         <script
             src="cdn/leaflet-heat.js">
@@ -79,6 +71,7 @@
 
             function showCountryDetails(countryCode){
                 selectedCountry = countryCode;
+                console.log(selectedCountry)
                 sideCountryDetails.style.marginLeft = "0%";
                 showSankeyMap();
             }
@@ -112,20 +105,64 @@
                 })
             tileLayer.addTo(map);
 
-            map._initPathRoot();
+            //map._initPathRoot();
             let svg = d3.select("#container_map").select("svg"),
 	           g = svg.append("g");
 
-            d3.csv("november_lat_long_eventcode.csv", function(data) {
-   		           /* Add a LatLng object to each item in the dataset */
-                let pruneCluster = new PruneClusterForLeaflet();
-                data.forEach(row => {
-                    const marker = new PruneCluster.Marker(row["ActionGeo_Lat"], row["ActionGeo_Long"]);
-                    pruneCluster.RegisterMarker(marker);
-                })
 
-                map.addLayer(pruneCluster);
-   	        })
+            let canvas = L.canvas();
+            let currentClusteringLevel = -1;
+
+            function drawEventPoints(){
+                function getClusteringLevel(zoomLevel){
+                    if(zoomLevel >= 0 && zoomLevel < 6){
+                        return 0;
+                    } else if(zoomLevel >= 6) {
+                        return 1;
+                    }
+                }
+
+                const currentZoom = map.getZoom();
+                const newClusteringLevel = getClusteringLevel(currentZoom);
+                console.log(`Levels: ${currentClusteringLevel} and ${newClusteringLevel}`)
+                if(currentClusteringLevel != newClusteringLevel){
+                    console.log("Redrawing")
+                    canvas.removeFrom(map);
+                    canvas = new L.canvas();
+                    d3.csv("november_lat_long_eventcode.csv", function(data){
+                        let groupingFunction = (coord) => coord
+                        switch(currentClusteringLevel){
+                            case 0:
+                                groupingFunction = (coord) => (Math.round(coord * 4) / 4).toFixed(2);
+                                break;
+                            case 1:
+                                groupingFunction = (coord) => coord;
+                                break;
+                            default:
+                                break;
+                        }
+                        const grouped = d3.nest()
+                        .key(d => [groupingFunction(d["ActionGeo_Lat"]), groupingFunction(d["ActionGeo_Long"])])
+                        .rollup(group => group.length)
+                        .entries(data);
+                        grouped.forEach((data, index) => {
+                                const latlngArray = data.key.split(",");
+                                let latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
+                                let circle = L.circleMarker(latlng, {
+                                    renderer: canvas,
+                                    fillColor: "red",
+                                    // We use the logarithm because otherwise we have problems with handling the size
+                                    // of the circles
+                                    radius: Math.log(data.value) + 1,
+                                }).bindPopup(`${data.value} events`).addTo(map);
+                        })
+                    })
+                }
+                currentClusteringLevel = newClusteringLevel;
+            }
+
+            drawEventPoints();
+            map.on("zoomend", () => drawEventPoints());
 
             let geoJSONData = "data/custom.geo.json";
             let customStyle = {

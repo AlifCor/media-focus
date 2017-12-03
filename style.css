@@ -9,7 +9,7 @@
     height: 100%;
     margin-left: -40%;
     z-index: 1;
-    position:fixed;
+    position: fixed;
     background-color: rgba(255, 255, 255, 0.8);
     transition: 0.2s;
     display: flex;
@@ -20,25 +20,30 @@
     position: absolute;
     width: 30px;
     height: 30px;
-    right:0;
-    top:0;
+    right: 0;
+    top: 0;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-#country_close_btn i{
+#country_close_btn i {
+}
+
+#side_menu {
+    width: 1%;
+    background-color: white;
+    z-index: 1;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    transition: 0.2s;
 }
 
 #side_events {
-    width: 1%;
-    background-color: "white";
-    z-index: 1;
-    height: 100%;
-    top:0;
-    right:0;
-    transition: 0.2s;
+    background-color: white;
 }
 
 #button_event_drawer {
@@ -84,8 +89,7 @@
     width: 100%;
 }
 
-#map_container
-{
+#map_container {
     width: 200px;
     height: 100px;
 }
@@ -93,17 +97,38 @@
 .label_event_checkbox {
 }
 
-html
-{
-  height: 100%;
-  position: relative;;
+html {
+    height: 100%;
+    position: relative;;
 }
 
-body{
+body {
     overflow: hidden;
-  height: 100%;
-  margin-top: 0px;
-  margin-right: 0px;
-  margin-bottom: 0px;
-  margin-left: 0px;
+    height: 100%;
+    margin-top: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
 }
+
+#pull {
+    position: absolute;
+    top: 50%;
+    left: -30px;
+    background: black;
+}
+
+#pull span:before, #pull span:after {
+    background: #fff;
+    position: absolute;
+    top: -9px;
+    width: 30px;
+    height: 3px;
+    display: block;
+    content: "";
+    -webkit-transition: all 0.1s ease;
+    transition: all 0.1s ease;
+}
+
+#pull span:after { top:9px; }
+body.active #pull { opacity:0 }

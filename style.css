@@ -42,10 +42,21 @@
     transition: 0.2s;
 }
 
+#accordion fieldset, #accordion input, #accordion div {
+    padding: 0;
+    margin: 0;
+}
 
+#accordion input {
+    width: 100%;
+}
 
 #side_events {
-    background-color: white;
+    overflow: scroll;
+}
+
+#accordion {
+    overflow: scroll;
 }
 
 #button_event_drawer {

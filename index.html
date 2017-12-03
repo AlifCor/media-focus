@@ -37,7 +37,8 @@
     <div id="side_menu">
         <a id="pull"><span></span></a>
         <div id="side_events">
-
+            <div id="accordion">
+            </div>
         </div>
     </div>
 </div>
@@ -219,7 +220,7 @@
     let selectedCountry = defaultCountry;
 
     function showSankeyMap() {
-        d3.csv("november_lat_long_eventcode.csv", function(data){
+        d3.csv("november_lat_long_eventcode.csv", function (data) {
 
             data.forEach((row) => {
 
@@ -444,32 +445,52 @@
     d3.tsv("CAMEO.eventcodes.txt", function (data) {
         eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
         selectedEventCodes = eventCodes.map(cameoElem => cameoElem.CAMEOEVENTCODE);
-        let containerEventSelection = document.getElementById("side_events");
+        const containerEventSelection = $("#accordion");
+
+        const topEvents = [... new Set(eventCodes.map(event => event.CAMEOEVENTCODE.charAt(0)))];
+
+        topEvents.forEach((cameoElem, index) => {
+            $("<h3>GROUP-" + index + "</h3>").attr("id", "section-events-" + cameoElem).appendTo(containerEventSelection);
+            //const containerDiv = $("<div/>")
+            //$("<fieldset/>").attr("id", "events-" + cameoElem).appendTo(containerDiv);
+            //containerDiv.appendTo(containerEventSelection);
+            $("<div/>").attr("id", "events-" + cameoElem).appendTo(containerEventSelection);
+        });
 
         eventCodes.forEach((cameoElem, index) => {
-            let checkboxContainer = document.createElement("div");
-            let checkboxElem = document.createElement("input");
-            checkboxElem.setAttribute("type", "checkbox");
-            checkboxElem.setAttribute("checked", true);
-            checkboxElem.onchange = function () {
-                if (checkboxElem.checked && selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE) < 0) {
-                    selectedEventCodes.push(cameoElem.CAMEOEVENTCODE);
-                } else if (!checkboxElem.checked) {
-                    let indexElem = selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE);
-                    if (indexElem >= 0) {
-                        selectedEventCodes.splice(indexElem, 1);
+            const id = "box-" + cameoElem.CAMEOEVENTCODE;
+            const container = $(`#events-${cameoElem.CAMEOEVENTCODE.charAt(0)}`);
+
+            $("<input/>", {
+                "type": "checkbox",
+                "checked": true,
+                "id": id
+            }).change(
+                function () {
+                    if ($(this).is(":checked") && selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE) < 0) {
+                        selectedEventCodes.push(cameoElem.CAMEOEVENTCODE);
+                    } else if (!$(this).is(":checked")) {
+                        const indexElem = selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE);
+                        if (indexElem >= 0) {
+                            selectedEventCodes.splice(indexElem, 1);
+                        }
                     }
                 }
-            };
-            checkboxContainer.appendChild(checkboxElem);
+            ).appendTo(container);
 
-            let checkboxLabel = document.createElement("label");
-            checkboxLabel.classList.add("label_event_checkbox");
-            checkboxLabel.innerHTML = cameoElem.EVENTDESCRIPTION;
-            checkboxContainer.appendChild(checkboxLabel);
+            $("<label>" + cameoElem.EVENTDESCRIPTION + "</label>").attr({
+                "for": id,
+                "class": "label_event_checkbox"
+            }).appendTo(container);
+        });
 
-            containerEventSelection.appendChild(checkboxContainer);
-        })
+        $(function () {
+            $("input").checkboxradio();
+        });
+
+        $(function () {
+            $("#accordion").accordion();
+        });
     });
 
     //preprocessMentions();

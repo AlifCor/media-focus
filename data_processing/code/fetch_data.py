@@ -6,14 +6,14 @@ import zipfile
 import pandas as pd
 
 data_directory = "../data"
-gdelt_directory = "{}/gdelt".format(data_directory)
+gdelt_directory = "{}".format(data_directory)
 
 def load_column_names():
-    path = "{}/gdelt_column_names.csv".format(data_directory)
+    path = "{}/gdelt_column_names_v1.csv".format(data_directory)
     return pd.read_csv(path, header=None).T.values.tolist()[0]
 
 def get_filename(date):
-    return "{y}{m}{d}.export.CSV".format(y=date.year, m=date.month, d=date.day)
+    return "{y}{m}{d}.export.CSV".format(y=(date.year), m=('%02.f' % date.month), d=('%02.f' % date.day))
 
 def get_file_path(date):
     return "{d}/{f}".format(d=gdelt_directory, f=get_filename(date))

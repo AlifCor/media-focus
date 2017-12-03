@@ -47,16 +47,9 @@
     margin: 0;
 }
 
-#accordion input {
-    width: 100%;
-}
-
-#side_events {
-    overflow: scroll;
-}
-
-#accordion {
-    overflow: scroll;
+#accordion label {
+    display: block;
+    text-align: left;
 }
 
 #button_event_drawer {
@@ -127,22 +120,10 @@ body {
 
 #pull {
     position: absolute;
-    top: 50%;
+    top: 46%;
     left: -30px;
-    background: black;
-}
-
-#pull span:before, #pull span:after {
-    background: #fff;
-    position: absolute;
-    top: -9px;
+    background: #f6f6f6;
     width: 30px;
-    height: 3px;
-    display: block;
-    content: "";
-    -webkit-transition: all 0.1s ease;
-    transition: all 0.1s ease;
+    height: 8%;
+    border-radius: 12px 0px 0px 12px;
 }
-
-#pull span:after { top:9px; }
-body.active #pull { opacity:0 }

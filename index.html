@@ -35,7 +35,7 @@
 
     </div>
     <div id="side_menu">
-        <a id="pull"><span></span></a>
+        <a id="pull"></a>
         <div id="side_events">
             <div id="accordion">
             </div>
@@ -89,7 +89,9 @@
         sideCountryDetails.style.marginLeft = "-40%";
     }
 
-    $(sideEventsDrawer).hover(_ => switchEventSideMenu(true), _ => switchEventSideMenu(false));
+    $("#container_map").hover(() => switchEventSideMenu(false));
+
+    $(sideEventsDrawer).hover(() => switchEventSideMenu(true))//, () => switchEventSideMenu(false));
 
     // Some general events listeners:
     /*sideEventsDrawer.addEventListener("mouseenter", function (event) {

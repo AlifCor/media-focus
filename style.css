@@ -20,25 +20,32 @@
     position: absolute;
     width: 30px;
     height: 30px;
-    right:0;
-    top:0;
+    right: 0;
+    top: 0;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-#country_close_btn i{
+#country_close_btn i {
 }
 
-#side_events {
-    width: 1%;
-    background-color: "white";
+#side_menu {
+    background-color: white;
     z-index: 1;
     height: 100%;
-    top:0;
-    right:0;
+    position: absolute;
+    width: 200px;
+    top: 0;
+    right: -200px;
     transition: 0.2s;
+}
+
+
+
+#side_events {
+    background-color: white;
 }
 
 #button_event_drawer {
@@ -85,8 +92,7 @@
     z-index: 0;
 }
 
-#map_container
-{
+#map_container {
     width: 200px;
     height: 100px;
 }
@@ -94,17 +100,38 @@
 .label_event_checkbox {
 }
 
-html
-{
-  height: 100%;
-  position: relative;;
+html {
+    height: 100%;
+    position: relative;;
 }
 
-body{
+body {
     overflow: hidden;
-  height: 100%;
-  margin-top: 0px;
-  margin-right: 0px;
-  margin-bottom: 0px;
-  margin-left: 0px;
+    height: 100%;
+    margin-top: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
 }
+
+#pull {
+    position: absolute;
+    top: 50%;
+    left: -30px;
+    background: black;
+}
+
+#pull span:before, #pull span:after {
+    background: #fff;
+    position: absolute;
+    top: -9px;
+    width: 30px;
+    height: 3px;
+    display: block;
+    content: "";
+    -webkit-transition: all 0.1s ease;
+    transition: all 0.1s ease;
+}
+
+#pull span:after { top:9px; }
+body.active #pull { opacity:0 }

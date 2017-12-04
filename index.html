@@ -162,7 +162,7 @@
                 let groupingFunction = (coord) => coord
                 switch (currentClusteringLevel) {
                     case 0:
-                        groupingFunction = (coord) => (Math.round(coord * 4) / 4).toFixed(2);
+                        groupingFunction = (coord) => (Math.round(coord));
                         break;
                     case 1:
                         groupingFunction = (coord) => coord;

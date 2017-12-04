@@ -179,6 +179,7 @@
                     let latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
                     let circle = L.circleMarker(latlng, {
                         renderer: canvas,
+                        stroke: false,
                         fillColor: "red",
                         // We use the logarithm because otherwise we have problems with handling the size
                         // of the circles

@@ -182,7 +182,7 @@
                         fillColor: "red",
                         // We use the logarithm because otherwise we have problems with handling the size
                         // of the circles
-                        radius: Math.log(data.value) + 1,
+                        radius: Math.sqrt(data.value) * 0.5 + 1,
                     }).bindPopup(`${data.value} events`).addTo(map);
                 })
             })

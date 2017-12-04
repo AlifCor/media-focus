@@ -53,6 +53,12 @@
 <script src="cdn/jquery-ui.min.js"></script>
 <script src="cdn/dist/PruneCluster.js"></script>
 <script>
+
+    // Constants:
+    const SOURCE_COUNTRY_COL = "SOURCE_CountryCode";
+    const EVENT_COUNTRY_COL = "ActionGeo_CountryCode";
+    const EVENT_CODE_TYPE = "EventRootCode";
+
     // Here we declare the general DOM references
     let sideEventsDrawer = document.getElementById("side_menu");
     let sideCountryDetails = document.getElementById("side_country_details");
@@ -137,7 +143,6 @@
     //map._initPathRoot();
     let svg = d3.select("#container_map").select("svg"),
         g = svg.append("g");
-
 
     let canvas = L.canvas();
     let currentClusteringLevel = -1;
@@ -232,18 +237,47 @@
     let eventCodes;
     let selectedEventCodes = [];
     */
-    let countriesMentions = {};
+
     const defaultCountry = "USA";
 
     let selectedCountry = defaultCountry;
 
     function showSankeyMap() {
         d3.csv("november_lat_long_eventcode.csv", function (data) {
+            let countriesMentions = {};
+            let eventMentions = {};
+
+            const eventData = data.filter(row => {
+                const sourceCountry = row[SOURCE_COUNTRY_COL];
+                const eventCountry = row[EVENT_COUNTRY_COL];
+                return sourceCountry !== eventCountry && (sourceCountry === selectedCountry || eventCountry === selectedCountry);
+            })
+
+            const d3GrouperEvents = d3.nest()
+            .key(row => row[EVENT_CODE_TYPE])
+            .rollup(rows => rows.length);
+
+            // Foreign events the selected country talks the most about:
+            const sourceSelected =
+            d3GrouperEvents.entries(eventData.filter(row => {
+                const sourceCountry = row[SOURCE_COUNTRY_COL];
+                return sourceCountry === selectedCountry;
+            }));
+
+            // Local events most spoken of abroad
+            const targetSelected =
+            d3GrouperEvents.entries(eventData.filter(row => {
+                const eventCountry = row[EVENT_COUNTRY_COL];
+                return eventCountry === selectedCountry;
+            }))
+
+            console.log(JSON.stringify(sourceSelected))
+            console.log(JSON.stringify(targetSelected));
 
             data.forEach((row) => {
+                const sourceCountry = row[SOURCE_COUNTRY_COL];
+                const eventCountry = row[EVENT_COUNTRY_COL];
 
-                const sourceCountry = row["SOURCE_CountryCode"];
-                const eventCountry = row["ActionGeo_CountryCode"];
                 if (!(sourceCountry in countriesMentions)) {
                     countriesMentions[sourceCountry] = {};
                 }

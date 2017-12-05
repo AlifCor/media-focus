@@ -58,6 +58,7 @@
     const EVENT_COUNTRY_COL = "ActionGeo_CountryCode";
     const EVENT_CODE_TYPE = "EventRootCode";
 
+
     // Here we declare the general DOM references
     let sideEventsDrawer = $("#side_menu");
     let containerMap = $("#container_map");
@@ -127,7 +128,6 @@
 
     function showCountryDetails(countryCode) {
         selectedCountry = countryCode;
-        console.log(selectedCountry)
         sideCountryDetails.style.marginLeft = "0%";
         showSankeyMap();
     }
@@ -153,9 +153,10 @@
         g = svg.append("g");
 
     let canvas = L.canvas();
+    let canvasFilter = L.canvas();
     let currentClusteringLevel = -1;
 
-    function drawEventPoints() {
+    function drawEventPoints(color="red", filterFun = () => true, level=0) {
         function getClusteringLevel(zoomLevel) {
             if (zoomLevel >= 0 && zoomLevel < 6) {
                 return 0;
@@ -166,12 +167,30 @@
 
         const currentZoom = map.getZoom();
         const newClusteringLevel = getClusteringLevel(currentZoom);
-        console.log(`Levels: ${currentClusteringLevel} and ${newClusteringLevel}`)
-        if (currentClusteringLevel != newClusteringLevel) {
-            console.log("Redrawing")
+        function groupingData(dataToShow, groupingFunction, canvas){
+            const grouped = d3.nest()
+                .key(d => [groupingFunction(d["ActionGeo_Lat"]), groupingFunction(d["ActionGeo_Long"])])
+                .rollup(group => group.length)
+                .entries(dataToShow);
+            grouped.forEach((data, index) => {
+                const latlngArray = data.key.split(",");
+                let latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
+                let circle = L.circleMarker(latlng, {
+                    renderer: canvas,
+                    stroke: false,
+                    fillColor: color,
+                    // We use the logarithm because otherwise we have problems with handling the size
+                    // of the circles
+                    radius: Math.sqrt(data.value) * 0.5 + 1,
+                }).bindPopup(`${data.value} events`).addTo(map);
+            })
+        }
+        if (currentClusteringLevel != newClusteringLevel && level == 0) {
             canvas.removeFrom(map);
             canvas = new L.canvas();
+
             d3.csv("november_lat_long_eventcode.csv", function (data) {
+                let filtered = data.filter(filterFun);
                 let groupingFunction = (coord) => coord
                 switch (currentClusteringLevel) {
                     case 0:
@@ -183,24 +202,15 @@
                     default:
                         break;
                 }
-                const grouped = d3.nest()
-                    .key(d => [groupingFunction(d["ActionGeo_Lat"]), groupingFunction(d["ActionGeo_Long"])])
-                    .rollup(group => group.length)
-                    .entries(data);
-                grouped.forEach((data, index) => {
-                    const latlngArray = data.key.split(",");
-                    let latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
-                    let circle = L.circleMarker(latlng, {
-                        renderer: canvas,
-                        stroke: false,
-                        fillColor: "red",
-                        // We use the logarithm because otherwise we have problems with handling the size
-                        // of the circles
-                        radius: Math.sqrt(data.value) * 0.5 + 1,
-                    }).bindPopup(`${data.value} events`).addTo(map);
-                })
+                groupingData(filtered, groupingFunction, canvas);
             })
-        }
+        } else if(level === 1){
+            canvasFilter.removeFrom(map);
+            canvasFilter = new L.canvas();
+            d3.csv("november_lat_long_eventcode.csv", function (data) {
+                let filtered = data.filter(filterFun);
+                groupingData(filtered, coord => coord, canvasFilter);
+        })}
         currentClusteringLevel = newClusteringLevel;
     }
 
@@ -222,10 +232,13 @@
         showCountryDetails(properties["iso_a3"]);
     }
 
+    let boundingCountries = {}
+
     function onEachFeature(feature, layer) {
         layer.on({
             click: (e) => clickFeature(e, feature.properties),
         });
+        boundingCountries[feature.properties["iso_a3"]] = layer.getBounds();
     }
 
     $.get(geoJSONData, function (data) {
@@ -279,9 +292,6 @@
                     return eventCountry === selectedCountry;
                 }))
 
-            console.log(JSON.stringify(sourceSelected))
-            console.log(JSON.stringify(targetSelected));
-
             data.forEach((row) => {
                 const sourceCountry = row[SOURCE_COUNTRY_COL];
                 const eventCountry = row[EVENT_COUNTRY_COL];
@@ -326,12 +336,35 @@
                 .nodePadding(10)
                 .extent([[1, 1], [width - 1, height - 6]]);
 
+            function handleMouseOverLink(d){
+                d3.select(this).attr(
+                    "stroke", "blue",
+                );
+                drawEventPoints("blue",
+                    row => row["SOURCE_CountryCode"] === d.source.name &&
+                        row["ActionGeo_CountryCode"] === d.target.name,
+                    1);
+            }
+
+            function handleMouseOutLink(d){
+                d3.select(this).attr(
+                    "stroke", "#000",
+                );
+                canvasFilter.removeFrom(map);
+            }
+
+            function handleClickLink(d){
+                let country = d.target.name;
+                map.fitBounds(boundingCountries[country]);
+            }
+
             let link = svg.append("g")
                 .attr("class", "links")
                 .attr("fill", "none")
                 .attr("stroke", "#000")
                 .attr("stroke-opacity", 0.2)
-                .selectAll("path");
+                .attr("border", "2px solid red")
+                .selectAll("path")
 
             let node = svg.append("g")
                 .attr("class", "nodes")
@@ -394,7 +427,10 @@
                 .attr("d", d3.sankeyLinkHorizontal())
                 .attr("stroke-width", function (d) {
                     return Math.max(1, d.width);
-                });
+                })
+                .on("mouseover", handleMouseOverLink)
+                .on("mouseout", handleMouseOutLink)
+                .on("click", handleClickLink);
 
             link.append("title")
                 .text(function (d) {

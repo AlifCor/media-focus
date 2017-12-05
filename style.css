@@ -32,25 +32,33 @@
 }
 
 #side_menu {
-    background-color: white;
+    background: #2C3E50;
     z-index: 1;
     height: 100%;
     position: absolute;
-    width: 200px;
+    width: 300px;
     top: 0;
-    right: -200px;
-    transition: 0.2s;
+    right: -300px;
 }
 
+#side_events {
+    background: #2C3E50;
+    position: absolute;
+    height: 100%;
+    overflow-y: scroll;
+}
+
+/*
 #accordion fieldset, #accordion input, #accordion div {
     padding: 0;
     margin: 0;
 }
-
-#accordion label {
+*/
+#accordion .pretty {
     display: block;
-    text-align: left;
+    margin-bottom: 15px;
 }
+
 
 #button_event_drawer {
     position: absolute;
@@ -112,18 +120,16 @@ html {
 body {
     overflow: hidden;
     height: 100%;
-    margin-top: 0px;
-    margin-right: 0px;
-    margin-bottom: 0px;
-    margin-left: 0px;
+    margin: 0;
 }
 
 #pull {
     position: absolute;
     top: 46%;
     left: -30px;
-    background: #f6f6f6;
+    background: #2C3E50;
     width: 30px;
     height: 8%;
-    border-radius: 12px 0px 0px 12px;
+    border-radius: 12px 0 0 12px;
+    cursor: pointer;
 }

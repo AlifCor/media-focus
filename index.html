@@ -9,10 +9,8 @@
     <meta name="author" content="Delisle, Kulovic, Hosseiny">
 
     <link rel="stylesheet" type="text/css" href="style.css">
-
-    <link rel="stylesheet" type="text/css" href="cdn/jquery-ui.min.css">
-    <link rel="stylesheet" type="text/css" href="cdn/jquery-ui.theme.min.css">
-    <link rel="stylesheet" type="text/css" href="cdn/jquery-ui.structure.min.css">
+    <link rel="stylesheet" type="text/css" href="cdn/accordion.css">
+    <link rel="stylesheet" type="text/css" href="cdn/pretty-checkbox.min.css">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -37,7 +35,8 @@
     <div id="side_menu">
         <a id="pull"></a>
         <div id="side_events">
-            <div id="accordion">
+            <!-- Inspired by https://codepen.io/agrayson/pen/aLpKB -->
+            <div id="accordion" class="acc-container">
             </div>
         </div>
     </div>
@@ -60,9 +59,9 @@
     const EVENT_CODE_TYPE = "EventRootCode";
 
     // Here we declare the general DOM references
-    let sideEventsDrawer = document.getElementById("side_menu");
+    let sideEventsDrawer = $("#side_menu");
+    let containerMap = $("#container_map");
     let sideCountryDetails = document.getElementById("side_country_details");
-    let containerMap = document.getElementById("container_map");
     let countryCloseBtn = document.getElementById("country_close_btn");
 
     // Here are the "global variables" for our document
@@ -86,18 +85,42 @@
             .join(' ');
     }
 
-    /**
-     *   Used to switch the events filtering side drawer.
-     *   @arg open : Boolean
-     */
-    function switchEventSideMenu(open) {
-        showEventSideMenu = open;
-        if (open) {
-            sideEventsDrawer.style.right = "0px";
-        } else {
-            sideEventsDrawer.style.right = "-200px";
-        }
+    function prepareAccordion() {
+        let animTime = 300,
+            clickPolice = false;
+
+        $(document).on('touchstart click', '.acc-btn', function () {
+            if (!clickPolice) {
+                clickPolice = true;
+
+                let currIndex = $(this).index('.acc-btn'),
+                    targetHeight = $('.acc-content-inner').eq(currIndex).outerHeight();
+
+                $('.acc-btn h1').removeClass('selected');
+                $(this).find('h1').addClass('selected');
+
+                $('.acc-content').stop().animate({height: 0}, animTime);
+                $('.acc-content').eq(currIndex).stop().animate({height: targetHeight}, animTime);
+
+                setTimeout(function () {
+                    clickPolice = false;
+                }, animTime);
+            }
+
+        });
     }
+
+    containerMap.hover(() =>
+        sideEventsDrawer.animate({
+            right: "-" + sideEventsDrawer.width() + "px"
+        }, 200)
+    );
+
+    sideEventsDrawer.hover(() =>
+        sideEventsDrawer.animate({
+            right: "0px"
+        }, 200)
+    );
 
     function showCountryDetails(countryCode) {
         selectedCountry = countryCode;
@@ -110,27 +133,9 @@
         sideCountryDetails.style.marginLeft = "-40%";
     }
 
-    $("#container_map").hover(() => switchEventSideMenu(false));
-
-    $(sideEventsDrawer).hover(() => switchEventSideMenu(true));
-
-    // Some general events listeners:
-    /*sideEventsDrawer.addEventListener("mouseenter", function (event) {
-        if (!showEventSideMenu) {
-            switchEventSideMenu(true);
-        }
-    });*/
-
-    /*sideEventsDrawer.addEventListener("mouseleave", function (event) {
-        if (showEventSideMenu) {
-            switchEventSideMenu(false);
-        }
-    });*/
-
     countryCloseBtn.addEventListener("click", closeCountryDetails);
 
     let map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);
-    ;
 
     let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
         attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
@@ -254,22 +259,22 @@
             })
 
             const d3GrouperEvents = d3.nest()
-            .key(row => row[EVENT_CODE_TYPE])
-            .rollup(rows => rows.length);
+                .key(row => row[EVENT_CODE_TYPE])
+                .rollup(rows => rows.length);
 
             // Foreign events the selected country talks the most about:
             const sourceSelected =
-            d3GrouperEvents.entries(eventData.filter(row => {
-                const sourceCountry = row[SOURCE_COUNTRY_COL];
-                return sourceCountry === selectedCountry;
-            }));
+                d3GrouperEvents.entries(eventData.filter(row => {
+                    const sourceCountry = row[SOURCE_COUNTRY_COL];
+                    return sourceCountry === selectedCountry;
+                }));
 
             // Local events most spoken of abroad
             const targetSelected =
-            d3GrouperEvents.entries(eventData.filter(row => {
-                const eventCountry = row[EVENT_COUNTRY_COL];
-                return eventCountry === selectedCountry;
-            }))
+                d3GrouperEvents.entries(eventData.filter(row => {
+                    const eventCountry = row[EVENT_COUNTRY_COL];
+                    return eventCountry === selectedCountry;
+                }))
 
             console.log(JSON.stringify(sourceSelected))
             console.log(JSON.stringify(targetSelected));
@@ -502,46 +507,54 @@
         const topEvents = [... new Set(eventCodes.map(event => event.CAMEOEVENTCODE.charAt(0)))];
 
         topEvents.forEach((cameoElem, index) => {
-            $("<h3>Group-" + index + "</h3>").attr("id", "section-events-" + cameoElem).appendTo(containerEventSelection);
-            //const containerDiv = $("<div/>")
-            //$("<fieldset/>").attr("id", "events-" + cameoElem).appendTo(containerDiv);
-            //containerDiv.appendTo(containerEventSelection);
-            $("<div/>").attr("id", "events-" + cameoElem).appendTo(containerEventSelection);
+            const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
+            $("<h1/>").text("Group-" + index).addClass(index === 0 ? "selected" : null).appendTo(accBtn);
+
+            const accContent = $("<div/>").addClass("acc-content" + (index === 0 ? " open" : "")).appendTo(containerEventSelection);
+            $("<div/>").attr("id", "events-" + cameoElem).addClass("acc-content-inner").appendTo(accContent);
         });
 
         eventCodes.forEach((cameoElem, index) => {
             const id = "box-" + cameoElem.CAMEOEVENTCODE;
             const container = $(`#events-${cameoElem.CAMEOEVENTCODE.charAt(0)}`);
 
-            $("<input/>", {
-                "type": "checkbox",
-                "checked": true,
-                "id": id
-            }).change(
-                function () {
-                    if ($(this).is(":checked") && selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE) < 0) {
-                        selectedEventCodes.push(cameoElem.CAMEOEVENTCODE);
-                    } else if (!$(this).is(":checked")) {
-                        const indexElem = selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE);
-                        if (indexElem >= 0) {
-                            selectedEventCodes.splice(indexElem, 1);
+            $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
+                $("<input/>", {
+                    "type": "checkbox",
+                    "checked": true,
+                    "id": id
+                }).change(
+                    function () {
+                        if ($(this).is(":checked") && selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE) < 0) {
+                            selectedEventCodes.push(cameoElem.CAMEOEVENTCODE);
+                        } else if (!$(this).is(":checked")) {
+                            const indexElem = selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE);
+                            if (indexElem >= 0) {
+                                selectedEventCodes.splice(indexElem, 1);
+                            }
                         }
                     }
-                }
+                )
+            ).append(
+                $("<div/>").addClass("state p-success").append(
+                    $("<label>" + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
+                        "for": id,
+                        "class": "label_event_checkbox"
+                    })
+                )
             ).appendTo(container);
 
-            $("<label>" + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
-                "for": id,
-                "class": "label_event_checkbox"
-            }).appendTo(container);
-        });
+            if (index === eventCodes.length - 1) {
+                prepareAccordion();
 
-        $(function () {
-            $("input").checkboxradio();
-        });
+                setTimeout(() => sideEventsDrawer.animate({
+                    right: "-" + sideEventsDrawer.width() / 4 + "px"
+                }, 300), 1500);
 
-        $(function () {
-            $("#accordion").accordion();
+                setTimeout(() => sideEventsDrawer.animate({
+                    right: "-" + sideEventsDrawer.width() + "px"
+                }, 200), 2300);
+            }
         });
     });
 

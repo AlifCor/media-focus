@@ -54,8 +54,8 @@
 <script>
 
     // Constants:
-    const SOURCE_COUNTRY_COL = "SOURCE_CountryCode";
-    const EVENT_COUNTRY_COL = "ActionGeo_CountryCode";
+    const SOURCE_COUNTRY_COL = "source_country_name";
+    const EVENT_COUNTRY_COL = "country_name";
     const EVENT_CODE_TYPE = "EventRootCode";
 
 
@@ -229,7 +229,8 @@
 
     function clickFeature(e, properties) {
         let layer = e.target;
-        showCountryDetails(properties["iso_a3"]);
+        console.log(properties)
+        showCountryDetails(properties["name"]);
     }
 
     let boundingCountries = {}
@@ -341,8 +342,8 @@
                     "stroke", "blue",
                 );
                 drawEventPoints("blue",
-                    row => row["SOURCE_CountryCode"] === d.source.name &&
-                        row["ActionGeo_CountryCode"] === d.target.name,
+                    row => row[SOURCE_COUNTRY_COL] === d.source.name &&
+                        row[EVENT_COUNTRY_COL] === d.target.name,
                     1);
             }
 
@@ -505,8 +506,8 @@
             data.forEach((row) => {
 
                 // We take advantage of the filter to construct the countriesMentions object:
-                const sourceCountry = row["SOURCE_CountryCode"];
-                const eventCountry = row["ActionGeo_CountryCode"];
+                const sourceCountry = row[SOURCE_COUNTRY_COL];
+                const eventCountry = row[EVENT_COUNTRY_COL];
                 if (!(sourceCountry in countriesMentions)) {
                     countriesMentions[sourceCountry] = {};
                 }

@@ -110,16 +110,19 @@
         });
     }
 
-    containerMap.hover(() =>
-        sideEventsDrawer.animate({
-            right: "-" + sideEventsDrawer.width() + "px"
-        }, 200)
-    );
+    $(document).ready(() => {
+            containerMap.hover(() =>
+                sideEventsDrawer.animate({
+                    right: "-" + sideEventsDrawer.width() + "px"
+                }, 200)
+            );
 
-    sideEventsDrawer.hover(() =>
-        sideEventsDrawer.animate({
-            right: "0px"
-        }, 200)
+            sideEventsDrawer.hover(() =>
+                sideEventsDrawer.animate({
+                    right: "0px"
+                }, 200)
+            );
+        }
     );
 
     function showCountryDetails(countryCode) {
@@ -500,23 +503,23 @@
     }
 
     d3.tsv("CAMEO.eventcodes.txt", function (data) {
-        eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
+        eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 3);
         selectedEventCodes = eventCodes.map(cameoElem => cameoElem.CAMEOEVENTCODE);
         const containerEventSelection = $("#accordion");
 
-        const topEvents = [... new Set(eventCodes.map(event => event.CAMEOEVENTCODE.charAt(0)))];
+        const topEvents = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
 
         topEvents.forEach((cameoElem, index) => {
             const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
-            $("<h1/>").text("Group-" + index).addClass(index === 0 ? "selected" : null).appendTo(accBtn);
+            $("<h1/>").text(upperFirstLetters(cameoElem.EVENTDESCRIPTION)).addClass(index === 0 ? "selected" : null).appendTo(accBtn);
 
             const accContent = $("<div/>").addClass("acc-content" + (index === 0 ? " open" : "")).appendTo(containerEventSelection);
-            $("<div/>").attr("id", "events-" + cameoElem).addClass("acc-content-inner").appendTo(accContent);
+            $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
         });
 
         eventCodes.forEach((cameoElem, index) => {
             const id = "box-" + cameoElem.CAMEOEVENTCODE;
-            const container = $(`#events-${cameoElem.CAMEOEVENTCODE.charAt(0)}`);
+            const container = $(`#events-${cameoElem.CAMEOEVENTCODE.substr(0, 2)}`);
 
             $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
                 $("<input/>", {

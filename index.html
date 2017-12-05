@@ -112,16 +112,20 @@
     }
 
     $(document).ready(() => {
-            containerMap.hover(() =>
-                sideEventsDrawer.animate({
-                    right: "-" + sideEventsDrawer.width() + "px"
-                }, 200)
+            containerMap.hover(() => {
+                    sideEventsDrawer.stop();
+                    sideEventsDrawer.animate({
+                        right: "-" + sideEventsDrawer.width() + "px"
+                    }, 200);
+                }
             );
 
-            sideEventsDrawer.hover(() =>
-                sideEventsDrawer.animate({
-                    right: "0px"
-                }, 200)
+            sideEventsDrawer.hover(() => {
+                    sideEventsDrawer.stop();
+                    sideEventsDrawer.animate({
+                        right: "0px"
+                    }, 200);
+                }
             );
         }
     );

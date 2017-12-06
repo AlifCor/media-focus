@@ -58,17 +58,9 @@
 <script src="cdn/dist/PruneCluster.js"></script>
 <script>
 
-    // Reading the data
-
-    let events = [];
-
-    // Events filtered with checkboxes on the right
-    let filteredEvents = [];
-
     function getFilteredEvents(callback){
         d3.csv("november_lat_long_eventcode.csv", (data) => {
-            events = data;
-            filteredEvents = data;
+            let filteredEvents = data;
             callback(filteredEvents);
         });
     }

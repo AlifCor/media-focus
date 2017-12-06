@@ -12,7 +12,6 @@
     position: fixed;
     background-color: rgba(255, 255, 255, 0.8);
     transition: 0.2s;
-    display: flex;
     justify-content: center;
 }
 
@@ -26,9 +25,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-#country_close_btn i {
 }
 
 #side_menu {
@@ -68,11 +64,23 @@
     background-color: transparent;
 }
 
-#container_sankey {
+#container_sankey_countries {
     position: relative;
-    margin-top: 10%;
+    margin: auto;
+    margin-top: 5%;
     height: 40%;
+    margin-left: 10%;
     width: 80%;
+    margin-right: 10%;
+}
+
+#container_sankey_events {
+    position: relative;
+    margin: auto;
+    height: 40%;
+    margin-left: 10%;
+    width: 80%;
+    margin-right: 10%;
 }
 
 #switch {

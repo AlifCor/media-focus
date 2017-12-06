@@ -21,9 +21,14 @@
 <body>
 <div id="main_container">
     <div id="side_country_details">
-        <svg id="container_sankey">
+        <svg id="container_sankey_countries">
 
         </svg>
+
+        <svg id="container_sankey_events">
+
+        </svg>
+
         <div id="country_close_btn">
             <i id="icon_ccb" class="fa fa-arrow-left"></i>
         </div>
@@ -53,6 +58,21 @@
 <script src="cdn/dist/PruneCluster.js"></script>
 <script>
 
+    // Reading the data
+
+    let events = [];
+
+    // Events filtered with checkboxes on the right
+    let filteredEvents = [];
+
+    function getFilteredEvents(callback){
+        d3.csv("november_lat_long_eventcode.csv", (data) => {
+            events = data;
+            filteredEvents = data;
+            callback(filteredEvents);
+        });
+    }
+
     // Constants:
     const SOURCE_COUNTRY_COL = "source_country_name";
     const EVENT_COUNTRY_COL = "country_name";
@@ -64,6 +84,17 @@
     let containerMap = $("#container_map");
     let sideCountryDetails = document.getElementById("side_country_details");
     let countryCloseBtn = document.getElementById("country_close_btn");
+
+    // We also create our Leaflet map
+    let map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);
+
+    let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        maxZoom: 18,
+        id: 'mapbox.streets',
+        accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
+    });
+    tileLayer.addTo(map);
 
     // Here are the "global variables" for our document
     let showEventSideMenu = false;
@@ -130,37 +161,27 @@
         }
     );
 
-    function showCountryDetails(countryCode) {
-        selectedCountry = countryCode;
-        sideCountryDetails.style.marginLeft = "0%";
-        showSankeyMap();
-    }
-
-    function closeCountryDetails() {
-        sideCountryDetails.style.marginLeft = "-40%";
-    }
-
-    countryCloseBtn.addEventListener("click", closeCountryDetails);
-
-    let map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);
-
-    let tileLayer = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-        attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
-        maxZoom: 18,
-        id: 'mapbox.streets',
-        accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
-    });
-    tileLayer.addTo(map);
-
-    //map._initPathRoot();
-    let svg = d3.select("#container_map").select("svg"),
-        g = svg.append("g");
-
-    let canvas = L.canvas();
-    let canvasFilter = L.canvas();
+    let mainCanvas = L.canvas();
     let currentClusteringLevel = -1;
 
-    function drawEventPoints(color="red", filterFun = () => true, level=0) {
+    function drawData(dataToShow, groupingFunction, canvas, color){
+        const grouped = d3.nest()
+            .key(d => [groupingFunction(d["ActionGeo_Lat"]), groupingFunction(d["ActionGeo_Long"])])
+            .rollup(group => group.length)
+            .entries(dataToShow);
+        grouped.forEach((data, index) => {
+            const latlngArray = data.key.split(",");
+            let latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
+            let circle = L.circleMarker(latlng, {
+                renderer: canvas,
+                stroke: false,
+                fillColor: color,
+                radius: Math.sqrt(data.value) + 1,
+            }).addTo(map);
+        })
+    }
+
+    function renderMainCanvas(){
         function getClusteringLevel(zoomLevel) {
             if (zoomLevel >= 0 && zoomLevel < 6) {
                 return 0;
@@ -171,77 +192,85 @@
 
         const currentZoom = map.getZoom();
         const newClusteringLevel = getClusteringLevel(currentZoom);
-        function groupingData(dataToShow, groupingFunction, canvas){
-            const grouped = d3.nest()
-                .key(d => [groupingFunction(d["ActionGeo_Lat"]), groupingFunction(d["ActionGeo_Long"])])
-                .rollup(group => group.length)
-                .entries(dataToShow);
-            grouped.forEach((data, index) => {
-                const latlngArray = data.key.split(",");
-                let latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
-                let circle = L.circleMarker(latlng, {
-                    renderer: canvas,
-                    stroke: false,
-                    fillColor: color,
-                    // We use the logarithm because otherwise we have problems with handling the size
-                    // of the circles
-                    radius: Math.sqrt(data.value) * 0.5 + 1,
-                }).bindPopup(`${data.value} events`).addTo(map);
-            })
+        if(newClusteringLevel != currentClusteringLevel){
+            mainCanvas.removeFrom(map);
+            let groupingFunction = (coord) => coord
+            switch (currentClusteringLevel) {
+                case 0:
+                    groupingFunction = (coord) => (Math.round(coord));
+                    break;
+                case 1:
+                    groupingFunction = (coord) => coord;
+                    break;
+                default:
+                    break;
+            }
+            getFilteredEvents((filteredEvents) => drawData(filteredEvents, groupingFunction, mainCanvas, "red"));
         }
-        if (currentClusteringLevel != newClusteringLevel && level == 0) {
-            canvas.removeFrom(map);
-            canvas = new L.canvas();
-
-            d3.csv("november_lat_long_eventcode.csv", function (data) {
-                let filtered = data.filter(filterFun);
-                let groupingFunction = (coord) => coord
-                switch (currentClusteringLevel) {
-                    case 0:
-                        groupingFunction = (coord) => (Math.round(coord));
-                        break;
-                    case 1:
-                        groupingFunction = (coord) => coord;
-                        break;
-                    default:
-                        break;
-                }
-                groupingData(filtered, groupingFunction, canvas);
-            })
-        } else if(level === 1){
-            canvasFilter.removeFrom(map);
-            canvasFilter = new L.canvas();
-            d3.csv("november_lat_long_eventcode.csv", function (data) {
-                let filtered = data.filter(filterFun);
-                groupingData(filtered, coord => coord, canvasFilter);
-        })}
         currentClusteringLevel = newClusteringLevel;
     }
 
-    drawEventPoints();
-    map.on("zoomend", () => drawEventPoints());
+    renderMainCanvas();
+
+    // Corresponds to the elements we want to show when we hover on the sankey links
+    let overCanvas = L.canvas();
+    function renderOverCanvas(filterFun){
+        overCanvas.removeFrom(map);
+        getFilteredEvents((filteredEvents) => {
+            sourceTargetFilteredEvents = filteredEvents.filter(filterFun);
+            drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue");
+        });
+    }
+
+    function showCountryDetails(countryCode) {
+        selectedCountry = countryCode;
+        sideCountryDetails.style.marginLeft = "0%";
+        renderSankey();
+    }
+
+    function closeCountryDetails() {
+        sideCountryDetails.style.marginLeft = "-40%";
+    }
+
+    countryCloseBtn.addEventListener("click", closeCountryDetails);
+
+    let svg = d3.select("#container_map").select("svg"),
+        g = svg.append("g");
+
+    let canvas = L.canvas();
+    let canvasFilter = L.canvas();
+    // let currentClusteringLevel = -1;
 
     let geoJSONData = "data/custom.geo.json";
     let customStyle = {
-        stroke: true,
-        weight: 1.2,
-        zIndex: 1,
-        fill: true,
-        fillColor: "black",
-        fillOpacity: 0.2,
+        stroke: false,
+        //weight: 1.2,
+        zIndex: 2,
+        cursor: "pointer",
     }
 
     function clickFeature(e, properties) {
         let layer = e.target;
-        console.log(properties)
         showCountryDetails(properties["name"]);
     }
 
     let boundingCountries = {}
 
     function onEachFeature(feature, layer) {
-        layer.on({
-            click: (e) => clickFeature(e, feature.properties),
+        layer.on("click", function(e){
+            clickFeature(e, feature.properties);
+        });
+        layer.addEventListener("mouseover", function(){
+            console.log("mouseover")
+            this.setStyle({
+                "fillColor": "black",
+            });
+        });
+        layer.on("mouseout", function(){
+            console.log("mouseout")
+            this.setStyle({
+                "fillColor": "none",
+            });
         });
         boundingCountries[feature.properties["iso_a3"]] = layer.getBounds();
     }
@@ -255,47 +284,142 @@
         }).addTo(map);
     });
 
-    /*
+    let currentSankeyCountriesGraph = {
+        nodes: [],
+        links: [],
+    };
 
-    let heat;
+    let currentSankeyEventsGraph = {
+        nodes: [],
+        links: [],
+    };
 
-    let eventShowing = [];
-    let eventCodes;
-    let selectedEventCodes = [];
-    */
+    function updateSankey(){
+        let selectionSankeyContainer = d3.select("#container_sankey_countries");
+        selectionSankeyContainer.selectAll("svg > *").remove();
+        let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
 
-    const defaultCountry = "USA";
+        let svg = d3.select("svg"),
+            width = bboxSankeyContainer.width,
+            height = bboxSankeyContainer.height;
 
-    let selectedCountry = defaultCountry;
+        svg.attr("width", width)
+            .attr("height", height);
 
-    function showSankeyMap() {
-        d3.csv("november_lat_long_eventcode.csv", function (data) {
-            let countriesMentions = {};
-            let eventMentions = {};
+        let formatNumber = d3.format(",.0f"),
+            format = function (d) {
+                return formatNumber(d) + " TWh";
+            },
+            color = d3.scaleOrdinal(d3.schemeCategory10);
 
-            const eventData = data.filter(row => {
-                const sourceCountry = row[SOURCE_COUNTRY_COL];
-                const eventCountry = row[EVENT_COUNTRY_COL];
-                return sourceCountry !== eventCountry && (sourceCountry === selectedCountry || eventCountry === selectedCountry);
+        let sankey = d3.sankey()
+            .nodeWidth(15)
+            .nodePadding(10)
+            .extent([[1, 1], [width - 1, height - 6]]);
+
+        function handleMouseOverLink(d){
+            d3.select(this).attr(
+                "stroke", "blue",
+            );
+            renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
+                    row[EVENT_COUNTRY_COL] === d.target.name);
+        }
+
+        function handleMouseOutLink(d){
+            d3.select(this).attr(
+                "stroke", "#000",
+            );
+            overCanvas.removeFrom(map);
+        }
+
+        function handleClickLink(d){
+            let country = d.target.name;
+            map.fitBounds(boundingCountries[country]);
+        }
+
+        let link = svg.append("g")
+            .attr("class", "links")
+            .attr("fill", "none")
+            .attr("stroke", "#000")
+            .attr("stroke-opacity", 0.2)
+            .attr("border", "2px solid red")
+            .selectAll("path")
+
+        let node = svg.append("g")
+            .attr("class", "nodes")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", 10)
+            .selectAll("g");
+
+        sankey(currentSankeyCountriesGraph);
+
+        link = link
+            .data(currentSankeyCountriesGraph.links)
+            .enter().append("path")
+            .attr("d", d3.sankeyLinkHorizontal())
+            .attr("stroke-width", function (d) {
+                return Math.max(1, d.width);
+            })
+            .on("mouseover", handleMouseOverLink)
+            .on("mouseout", handleMouseOutLink)
+            .on("click", handleClickLink);
+
+        link.append("title")
+            .text(function (d) {
+                return d.source.name + " → " + d.target.name + "\n" + format(d.value);
+            });
+
+        node = node
+            .data(currentSankeyCountriesGraph.nodes)
+            .enter().append("g");
+
+        node.append("rect")
+            .attr("x", function (d) {
+                return d.x0;
+            })
+            .attr("y", function (d) {
+                return d.y0;
+            })
+            .attr("height", function (d) {
+                return d.y1 - d.y0;
+            })
+            .attr("width", function (d) {
+                return d.x1 - d.x0;
             })
 
-            const d3GrouperEvents = d3.nest()
-                .key(row => row[EVENT_CODE_TYPE])
-                .rollup(rows => rows.length);
+            .attr("stroke", "#000");
 
-            // Foreign events the selected country talks the most about:
-            const sourceSelected =
-                d3GrouperEvents.entries(eventData.filter(row => {
-                    const sourceCountry = row[SOURCE_COUNTRY_COL];
-                    return sourceCountry === selectedCountry;
-                }));
+        node.append("text")
+            .attr("x", function (d) {
+                return d.x0 - 6;
+            })
+            .attr("y", function (d) {
+                return (d.y1 + d.y0) / 2;
+            })
+            .attr("dy", "0.35em")
+            .attr("text-anchor", "end")
+            .text(function (d) {
+                return d.name;
+            })
+            .filter(function (d) {
+                return d.x0 < width / 2;
+            })
+            .attr("x", function (d) {
+                return d.x1 + 6;
+            })
+            .attr("text-anchor", "start");
 
-            // Local events most spoken of abroad
-            const targetSelected =
-                d3GrouperEvents.entries(eventData.filter(row => {
-                    const eventCountry = row[EVENT_COUNTRY_COL];
-                    return eventCountry === selectedCountry;
-                }))
+        node.append("title")
+            .text(function (d) {
+                return d.name + "\n" + format(d.value);
+            });
+    }
+
+    function renderSankey(){
+        getFilteredEvents(data => {
+            let countriesMentions = {};
+            let eventMentions = {};
+            let eventMentionsSelCountry = {};
 
             data.forEach((row) => {
                 const sourceCountry = row[SOURCE_COUNTRY_COL];
@@ -309,76 +433,44 @@
                 }
 
                 countriesMentions[sourceCountry][eventCountry] += 1;
-            })
 
-            countriesMentions = Object.keys(countriesMentions).map(sourceCountry => {
-                const currentSTArray = Object.keys(countriesMentions[sourceCountry]);
-                const sumMentions = currentSTArray.reduce((sum, targetCountry) => {
-                    return sum + countriesMentions[sourceCountry][targetCountry];
-                }, 0);
-                return [sourceCountry, currentSTArray.map(country => [country, countriesMentions[sourceCountry][country] / sumMentions])];
+                const eventType = row[EVENT_CODE_TYPE];
+                if(!(eventType in eventMentions)){
+                    eventMentions[eventType] = {};
+                }
+
+                if(!(eventCountry in eventMentions[eventType])){
+                    eventMentions[eventType][eventCountry] = 0;
+                }
+
+                eventMentions[eventType][eventCountry] += 1;
+
+                if(sourceCountry === selectedCountry){
+                    if(!(eventType in eventMentionsSelCountry)){
+                        eventMentionsSelCountry[eventType] = 0;
+                    }
+                    eventMentionsSelCountry[eventType] += 1
+                }
             });
 
-            d3.select("#container_sankey").selectAll("svg > *").remove();
-            let selectionSankeyContainer = d3.select("#container_sankey");
-            let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
-
-            let svg = d3.select("svg"),
-                width = bboxSankeyContainer.width;
-            height = bboxSankeyContainer.height;
-
-            svg.attr("width", width)
-                .attr("height", height);
-
-            let formatNumber = d3.format(",.0f"),
-                format = function (d) {
-                    return formatNumber(d) + " TWh";
-                },
-                color = d3.scaleOrdinal(d3.schemeCategory10);
-
-            let sankey = d3.sankey()
-                .nodeWidth(15)
-                .nodePadding(10)
-                .extent([[1, 1], [width - 1, height - 6]]);
-
-            function handleMouseOverLink(d){
-                d3.select(this).attr(
-                    "stroke", "blue",
-                );
-                drawEventPoints("blue",
-                    row => row[SOURCE_COUNTRY_COL] === d.source.name &&
-                        row[EVENT_COUNTRY_COL] === d.target.name,
-                    1);
+            function normalizeMentions(mentions){
+                return Object.keys(mentions).map(source => {
+                    const currentSTArray = Object.keys(mentions[source]);
+                    const sumMentions = currentSTArray.reduce((sum, target) => {
+                        return sum + mentions[source][target];
+                    }, 0);
+                    return [source, currentSTArray.map(country => [country, mentions[source][country] / sumMentions])];
+                })
             }
+            countriesMentions = normalizeMentions(countriesMentions);
+            eventMentions = normalizeMentions(eventMentions);
 
-            function handleMouseOutLink(d){
-                d3.select(this).attr(
-                    "stroke", "#000",
-                );
-                canvasFilter.removeFrom(map);
-            }
+            // C is for countries, E for events
+            let selectedMentionsC = {};
+            let reverseSelectedMentionsC = {};
 
-            function handleClickLink(d){
-                let country = d.target.name;
-                map.fitBounds(boundingCountries[country]);
-            }
-
-            let link = svg.append("g")
-                .attr("class", "links")
-                .attr("fill", "none")
-                .attr("stroke", "#000")
-                .attr("stroke-opacity", 0.2)
-                .attr("border", "2px solid red")
-                .selectAll("path")
-
-            let node = svg.append("g")
-                .attr("class", "nodes")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 10)
-                .selectAll("g");
-
-            let selectedMentions = {};
-            let reverseSelectedMentions = {};
+            let selectedMentionsE = {};
+            let reverseSelectedMentionsE = {};
 
             countriesMentions.forEach(sourceTarget => {
                 const sourceCountry = sourceTarget[0];
@@ -387,160 +479,66 @@
                     const targetCountry = target[0];
                     const value = target[1];
                     if (targetCountry === selectedCountry) {
-                        reverseSelectedMentions[sourceCountry] = value;
+                        reverseSelectedMentionsC[sourceCountry] = value;
                     } else if (sourceCountry === selectedCountry) {
-                        selectedMentions[targetCountry] = value;
+                        selectedMentionsC[targetCountry] = value;
                     }
                 });
             });
 
-            reverseSelectedMentions = Object.entries(reverseSelectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
-            // Normalizing reverseSelectedMentions:
-            const sumRSM = reverseSelectedMentions.reduce((sum, elem) => sum + elem[1], 0);
-            reverseSelectedMentions = reverseSelectedMentions.map(elem => [elem[0], elem[1] / sumRSM]);
-            const reverseNodes = reverseSelectedMentions.map(elem => {
+            eventMentions.forEach(sourceTarget => {
+                const sourceEvent = sourceTarget[0];
+                const targets = sourceTarget[1];
+                targets.forEach(target => {
+                    const targetCountry = target[0];
+                    const value = target[1];
+                    if(targetCountry === selectedCountry){
+                        reverseSelectedMentionsE[sourceEvent] = value;
+                    }
+                });
+            });
+
+
+
+            reverseSelectedMentionsC = Object.entries(reverseSelectedMentionsC).sort((a, b) => b[1] - a[1]).splice(0, 8);
+            // Normalizing reverseSelectedMentionsC:
+            const sumRSM = reverseSelectedMentionsC.reduce((sum, elem) => sum + elem[1], 0);
+            reverseSelectedMentionsC = reverseSelectedMentionsC.map(elem => [elem[0], elem[1] / sumRSM]);
+            const reverseNodes = reverseSelectedMentionsC.map(elem => {
                 return {name: elem[0]};
             });
-            const reverseLinks = reverseSelectedMentions.map((elem, index) => {
+            const reverseLinks = reverseSelectedMentionsC.map((elem, index) => {
                 return {source: index, target: reverseNodes.length, value: elem[1]};
             });
 
-            selectedMentions = Object.entries(selectedMentions).sort((a, b) => b[1] - a[1]).splice(0, 8);
-            // Normalizing reverseSelectedMentions:
-            const sumSM = selectedMentions.reduce((sum, elem) => sum + elem[1], 0);
-            selectedMentions = selectedMentions.map(elem => [elem[0], elem[1] / sumSM]);
-            let rightNodes = selectedMentions.map(elem => {
+            selectedMentionsC = Object.entries(selectedMentionsC).sort((a, b) => b[1] - a[1]).splice(0, 8);
+            // Normalizing reverseSelectedMentionsC:
+            const sumSM = selectedMentionsC.reduce((sum, elem) => sum + elem[1], 0);
+            selectedMentionsC = selectedMentionsC.map(elem => [elem[0], elem[1] / sumSM]);
+            let rightNodes = selectedMentionsC.map(elem => {
                 return {name: elem[0]};
             });
-            const rightLinks = selectedMentions.map((elem, index) => {
+            const rightLinks = selectedMentionsC.map((elem, index) => {
                 return {source: reverseNodes.length, target: index + reverseNodes.length + 1, value: elem[1]}
             });
 
             const nodes = reverseNodes.concat([{name: selectedCountry}]).concat(rightNodes);
             const links = reverseLinks.concat(rightLinks);
 
-            let exampleGraph = {
+            currentSankeyCountriesGraph = {
                 nodes: nodes,
                 links: links
             };
 
-            sankey(exampleGraph);
-
-            link = link
-                .data(exampleGraph.links)
-                .enter().append("path")
-                .attr("d", d3.sankeyLinkHorizontal())
-                .attr("stroke-width", function (d) {
-                    return Math.max(1, d.width);
-                })
-                .on("mouseover", handleMouseOverLink)
-                .on("mouseout", handleMouseOutLink)
-                .on("click", handleClickLink);
-
-            link.append("title")
-                .text(function (d) {
-                    return d.source.name + " → " + d.target.name + "\n" + format(d.value);
-                });
-
-            node = node
-                .data(exampleGraph.nodes)
-                .enter().append("g");
-
-            node.append("rect")
-                .attr("x", function (d) {
-                    return d.x0;
-                })
-                .attr("y", function (d) {
-                    return d.y0;
-                })
-                .attr("height", function (d) {
-                    return d.y1 - d.y0;
-                })
-                .attr("width", function (d) {
-                    return d.x1 - d.x0;
-                })
-
-                .attr("stroke", "#000");
-
-            node.append("text")
-                .attr("x", function (d) {
-                    return d.x0 - 6;
-                })
-                .attr("y", function (d) {
-                    return (d.y1 + d.y0) / 2;
-                })
-                .attr("dy", "0.35em")
-                .attr("text-anchor", "end")
-                .text(function (d) {
-                    return d.name;
-                })
-                .filter(function (d) {
-                    return d.x0 < width / 2;
-                })
-                .attr("x", function (d) {
-                    return d.x1 + 6;
-                })
-                .attr("text-anchor", "start");
-
-            node.append("title")
-                .text(function (d) {
-                    return d.name + "\n" + format(d.value);
-                });
-        });
-
-    }
-
-    function showBubblemap() {
-
-    }
-
-    function preprocessMentions() {
-        d3.csv('november_lat_long_eventcode.csv', function (data) {
-
-            function isANumber(number) {
-                return !isNaN(parseFloat(number))
-            }
-
-            /*
-            if(heat){
-                map.removeLayer(heat);
-            }
-            */
-
-            data.forEach((row) => {
-
-                // We take advantage of the filter to construct the countriesMentions object:
-                const sourceCountry = row[SOURCE_COUNTRY_COL];
-                const eventCountry = row[EVENT_COUNTRY_COL];
-                if (!(sourceCountry in countriesMentions)) {
-                    countriesMentions[sourceCountry] = {};
-                }
-                if (!(eventCountry in countriesMentions[sourceCountry])) {
-                    countriesMentions[sourceCountry][eventCountry] = 0;
-                }
-
-                countriesMentions[sourceCountry][eventCountry] += 1;
-
-                //return selectedEventCodes.indexOf(row["EventRootCode"].slice(0, 2)) >= 0
-            })
-            //.map(row => L.latLng(row["ActionGeo_Lat"], row["ActionGeo_Long"]));
-
-            countriesMentions = Object.keys(countriesMentions).map(sourceCountry => {
-                const currentSTArray = Object.keys(countriesMentions[sourceCountry]);
-                const sumMentions = currentSTArray.reduce((sum, targetCountry) => {
-                    return sum + countriesMentions[sourceCountry][targetCountry];
-                }, 0);
-                return [sourceCountry, currentSTArray.map(country => [country, countriesMentions[sourceCountry][country] / sumMentions])];
-            });
-
-            /*
-            heat = L.heatLayer(filteredGeoPoints, {
-                radius: 15,
-                blur: 15,
-                maxZoom: 17,
-            }).addTo(map);
-            */
+            updateSankey(currentSankeyCountriesGraph);
         })
+    }
+
+    const defaultCountry = "United States";
+    let selectedCountry = defaultCountry;
+
+    window.onresize = function(){
+        updateSankey();
     }
 
     d3.tsv("CAMEO.eventcodes.txt", function (data) {

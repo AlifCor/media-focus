@@ -20,6 +20,11 @@
 
 <body>
 
+<!--
+ Inspired by those:
+ - https://ihatetomatoes.net/create-custom-preloading-screen/
+ - https://ihatetomatoes.net/create-css3-spinning-preloader/
+ -->
 <div id="loader-wrapper">
     <div id="loader"></div>
 
@@ -586,7 +591,7 @@
 
         topEvents.forEach((cameoElem, index) => {
             const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
-            $("<h1/>").text(upperFirstLetters(cameoElem.EVENTDESCRIPTION)).addClass(index === 0 ? "selected" : null).appendTo(accBtn);
+            $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).addClass(index === 0 ? "selected" : null).appendTo(accBtn);
 
             const accContent = $("<div/>").addClass("acc-content" + (index === 0 ? " open" : "")).appendTo(containerEventSelection);
             $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
@@ -615,7 +620,7 @@
                 )
             ).append(
                 $("<div/>").addClass("state p-success").append(
-                    $("<label>" + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
+                    $("<label>" + cameoElem.CAMEOEVENTCODE.substr(2) + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
                         "for": id,
                         "class": "label_event_checkbox"
                     })

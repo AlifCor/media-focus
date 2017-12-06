@@ -14,11 +14,19 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+    <script type="text/javascript" src="cdn/leaflet.js"></script>
 
 </head>
 
 <body>
+
+<div id="loader-wrapper">
+    <div id="loader"></div>
+
+    <div class="loader-section section-left"></div>
+    <div class="loader-section section-right"></div>
+
+</div>
 <div id="main_container">
     <div id="side_country_details">
         <svg id="container_sankey_countries">
@@ -54,11 +62,10 @@
 <script src="cdn/d3/d3.min.js"></script>
 <script src="cdn/d3-sankey/d3-sankey.js"></script>
 <script src="cdn/jquery-3.2.1.min.js"></script>
-<script src="cdn/jquery-ui.min.js"></script>
 <script src="cdn/dist/PruneCluster.js"></script>
 <script>
 
-    function getFilteredEvents(callback){
+    function getFilteredEvents(callback) {
         d3.csv("november_lat_long_eventcode.csv", (data) => {
             let filteredEvents = data;
             callback(filteredEvents);
@@ -156,7 +163,7 @@
     let mainCanvas = L.canvas();
     let currentClusteringLevel = -1;
 
-    function drawData(dataToShow, groupingFunction, canvas, color){
+    function drawData(dataToShow, groupingFunction, canvas, color) {
         const grouped = d3.nest()
             .key(d => [groupingFunction(d["ActionGeo_Lat"]), groupingFunction(d["ActionGeo_Long"])])
             .rollup(group => group.length)
@@ -173,7 +180,26 @@
         })
     }
 
-    function renderMainCanvas(){
+    function startLoadingScreen() {
+        $("body").removeClass('loaded');
+    }
+
+    function endLoadingScreen() {
+        $("body").addClass('loaded');
+    }
+
+
+    function switchLoadingScreen() {
+        $('body').toggleClass('loaded');
+    }
+
+    let firstLoad = true;
+
+    function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
+        if (doBefore !== undefined) {
+            doBefore();
+        }
+
         function getClusteringLevel(zoomLevel) {
             if (zoomLevel >= 0 && zoomLevel < 6) {
                 return 0;
@@ -184,9 +210,9 @@
 
         const currentZoom = map.getZoom();
         const newClusteringLevel = getClusteringLevel(currentZoom);
-        if(newClusteringLevel != currentClusteringLevel){
+        if (newClusteringLevel !== currentClusteringLevel) {
             mainCanvas.removeFrom(map);
-            let groupingFunction = (coord) => coord
+            let groupingFunction = (coord) => coord;
             switch (currentClusteringLevel) {
                 case 0:
                     groupingFunction = (coord) => (Math.round(coord));
@@ -197,7 +223,24 @@
                 default:
                     break;
             }
-            getFilteredEvents((filteredEvents) => drawData(filteredEvents, groupingFunction, mainCanvas, "red"));
+            getFilteredEvents((filteredEvents) => {
+                    drawData(filteredEvents, groupingFunction, mainCanvas, "red");
+                    if (doAfter !== undefined) {
+                        doAfter();
+                        if (firstLoad) {
+                            firstLoad = false;
+
+                            setTimeout(() => sideEventsDrawer.animate({
+                                right: "-" + sideEventsDrawer.width() / 4 + "px"
+                            }, 300), 500);
+
+                            setTimeout(() => sideEventsDrawer.animate({
+                                right: "-" + sideEventsDrawer.width() + "px"
+                            }, 200), 1300);
+                        }
+                    }
+                }
+            );
         }
         currentClusteringLevel = newClusteringLevel;
     }
@@ -206,7 +249,8 @@
 
     // Corresponds to the elements we want to show when we hover on the sankey links
     let overCanvas = L.canvas();
-    function renderOverCanvas(filterFun){
+
+    function renderOverCanvas(filterFun) {
         overCanvas.removeFrom(map);
         getFilteredEvents((filteredEvents) => {
             sourceTargetFilteredEvents = filteredEvents.filter(filterFun);
@@ -239,32 +283,32 @@
         //weight: 1.2,
         zIndex: 2,
         cursor: "pointer",
-    }
+    };
 
     function clickFeature(e, properties) {
         let layer = e.target;
         showCountryDetails(properties["name"]);
     }
 
-    let boundingCountries = {}
+    let boundingCountries = {};
 
     function onEachFeature(feature, layer) {
-        layer.on("click", function(e){
+        layer.on("click", function (e) {
             clickFeature(e, feature.properties);
         });
-        layer.addEventListener("mouseover", function(){
+        layer.addEventListener("mouseover", function () {
             console.log("mouseover")
             this.setStyle({
                 "fillColor": "black",
             });
         });
-        layer.on("mouseout", function(){
+        layer.on("mouseout", function () {
             console.log("mouseout")
             this.setStyle({
                 "fillColor": "none",
             });
         });
-        boundingCountries[feature.properties["iso_a3"]] = layer.getBounds();
+        boundingCountries[feature.properties["name"]] = layer.getBounds();
     }
 
     $.get(geoJSONData, function (data) {
@@ -286,7 +330,7 @@
         links: [],
     };
 
-    function updateSankey(){
+    function updateSankey() {
         let selectionSankeyContainer = d3.select("#container_sankey_countries");
         selectionSankeyContainer.selectAll("svg > *").remove();
         let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
@@ -309,22 +353,22 @@
             .nodePadding(10)
             .extent([[1, 1], [width - 1, height - 6]]);
 
-        function handleMouseOverLink(d){
+        function handleMouseOverLink(d) {
             d3.select(this).attr(
                 "stroke", "blue",
             );
             renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
-                    row[EVENT_COUNTRY_COL] === d.target.name);
+                row[EVENT_COUNTRY_COL] === d.target.name);
         }
 
-        function handleMouseOutLink(d){
+        function handleMouseOutLink(d) {
             d3.select(this).attr(
                 "stroke", "#000",
             );
             overCanvas.removeFrom(map);
         }
 
-        function handleClickLink(d){
+        function handleClickLink(d) {
             let country = d.target.name;
             map.fitBounds(boundingCountries[country]);
         }
@@ -407,7 +451,7 @@
             });
     }
 
-    function renderSankey(){
+    function renderSankey() {
         getFilteredEvents(data => {
             let countriesMentions = {};
             let eventMentions = {};
@@ -427,25 +471,25 @@
                 countriesMentions[sourceCountry][eventCountry] += 1;
 
                 const eventType = row[EVENT_CODE_TYPE];
-                if(!(eventType in eventMentions)){
+                if (!(eventType in eventMentions)) {
                     eventMentions[eventType] = {};
                 }
 
-                if(!(eventCountry in eventMentions[eventType])){
+                if (!(eventCountry in eventMentions[eventType])) {
                     eventMentions[eventType][eventCountry] = 0;
                 }
 
                 eventMentions[eventType][eventCountry] += 1;
 
-                if(sourceCountry === selectedCountry){
-                    if(!(eventType in eventMentionsSelCountry)){
+                if (sourceCountry === selectedCountry) {
+                    if (!(eventType in eventMentionsSelCountry)) {
                         eventMentionsSelCountry[eventType] = 0;
                     }
                     eventMentionsSelCountry[eventType] += 1
                 }
             });
 
-            function normalizeMentions(mentions){
+            function normalizeMentions(mentions) {
                 return Object.keys(mentions).map(source => {
                     const currentSTArray = Object.keys(mentions[source]);
                     const sumMentions = currentSTArray.reduce((sum, target) => {
@@ -454,6 +498,7 @@
                     return [source, currentSTArray.map(country => [country, mentions[source][country] / sumMentions])];
                 })
             }
+
             countriesMentions = normalizeMentions(countriesMentions);
             eventMentions = normalizeMentions(eventMentions);
 
@@ -484,12 +529,11 @@
                 targets.forEach(target => {
                     const targetCountry = target[0];
                     const value = target[1];
-                    if(targetCountry === selectedCountry){
+                    if (targetCountry === selectedCountry) {
                         reverseSelectedMentionsE[sourceEvent] = value;
                     }
                 });
             });
-
 
 
             reverseSelectedMentionsC = Object.entries(reverseSelectedMentionsC).sort((a, b) => b[1] - a[1]).splice(0, 8);
@@ -529,9 +573,9 @@
     const defaultCountry = "United States";
     let selectedCountry = defaultCountry;
 
-    window.onresize = function(){
+    window.onresize = function () {
         updateSankey();
-    }
+    };
 
     d3.tsv("CAMEO.eventcodes.txt", function (data) {
         eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 3);
@@ -580,14 +624,6 @@
 
             if (index === eventCodes.length - 1) {
                 prepareAccordion();
-
-                setTimeout(() => sideEventsDrawer.animate({
-                    right: "-" + sideEventsDrawer.width() / 4 + "px"
-                }, 300), 1500);
-
-                setTimeout(() => sideEventsDrawer.animate({
-                    right: "-" + sideEventsDrawer.width() + "px"
-                }, 200), 2300);
             }
         });
     });

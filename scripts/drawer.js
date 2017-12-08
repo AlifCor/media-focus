@@ -31,7 +31,8 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
 
         //On document ready, append to DOM
         $(() => {
-            const containerEventSelection = $("#accordion");
+            const containerEventSelection = $("#accordion"), sideEventsDrawer = $("#side_menu"),
+                containerMap = $("#container_map"), sideMenu = $("#side_menu");
 
             topEvents.forEach((cameoElem, index) => {
                 const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
@@ -77,7 +78,7 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
                 }
             });
 
-            $("#container_map").hover(() => {
+            containerMap.hover(() => {
                     sideEventsDrawer.stop();
                     sideEventsDrawer.animate({
                         right: "-" + sideEventsDrawer.width() + "px"
@@ -85,14 +86,26 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
                 }
             );
 
-            $("#side_menu").hover(() => {
+            sideMenu.hover(() => {
                     sideEventsDrawer.stop();
                     sideEventsDrawer.animate({
                         right: "0px"
                     }, 200);
                 }
             );
-
         });
     }
 );
+
+function startLoadingScreen() {
+    $("body").removeClass('loaded');
+}
+
+function endLoadingScreen() {
+    $("body").addClass('loaded');
+}
+
+
+function switchLoadingScreen() {
+    $("body").toggleClass('loaded');
+}

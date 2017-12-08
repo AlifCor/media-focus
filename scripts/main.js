@@ -23,7 +23,7 @@ $(() => {
     sideEventsDrawer = $("#side_menu");
     sideCountryDetails = $("#side_country_details");
     countryCloseBtn = $("#country_close_btn");
-    
+
     countryCloseBtn.click(closeCountryDetails);
 
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {

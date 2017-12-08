@@ -14,6 +14,7 @@
 
     <link rel="stylesheet" href="styles/leaflet.css"/>
     <link rel="stylesheet" href="styles/font-awesome.min.css">
+
     <script src="scripts/leaflet.js"></script>
 
 </head>
@@ -68,13 +69,11 @@
 <script src="scripts/d3-sankey/d3-sankey.js"></script>
 <script src="scripts/jquery-3.2.1.min.js"></script>
 <script src="scripts/PruneCluster.js"></script>
+<script src="scripts/drawer.js"></script>
 <script>
 
     function getFilteredEvents(callback) {
-        d3.csv("november_lat_long_eventcode.csv", (data) => {
-            let filteredEvents = data;
-            callback(filteredEvents);
-        });
+        d3.csv("november_lat_long_eventcode.csv", (data) => callback(data));
     }
 
     // Constants:
@@ -87,7 +86,6 @@
 
     // Here we declare the general DOM references
     let sideEventsDrawer = $("#side_menu");
-    let containerMap = $("#container_map");
     let sideCountryDetails = document.getElementById("side_country_details");
     let countryCloseBtn = document.getElementById("country_close_btn");
 
@@ -123,50 +121,6 @@
             .join(' ');
     }
 
-    function prepareAccordion() {
-        let animTime = 300,
-            clickPolice = false;
-
-        $(document).on('touchstart click', '.acc-btn', function () {
-            if (!clickPolice) {
-                clickPolice = true;
-
-                let currIndex = $(this).index('.acc-btn'),
-                    targetHeight = $('.acc-content-inner').eq(currIndex).outerHeight();
-
-                $('.acc-btn h1').removeClass('selected');
-                $(this).find('h1').addClass('selected');
-
-                $('.acc-content').stop().animate({height: 0}, animTime);
-                $('.acc-content').eq(currIndex).stop().animate({height: targetHeight}, animTime);
-
-                setTimeout(function () {
-                    clickPolice = false;
-                }, animTime);
-            }
-
-        });
-    }
-
-    $(document).ready(() => {
-            containerMap.hover(() => {
-                    sideEventsDrawer.stop();
-                    sideEventsDrawer.animate({
-                        right: "-" + sideEventsDrawer.width() + "px"
-                    }, 200);
-                }
-            );
-
-            sideEventsDrawer.hover(() => {
-                    sideEventsDrawer.stop();
-                    sideEventsDrawer.animate({
-                        right: "0px"
-                    }, 200);
-                }
-            );
-        }
-    );
-
     let mainCanvas = L.canvas();
     let currentClusteringLevel = -1;
 
@@ -183,7 +137,7 @@
                 stroke: false,
                 fillColor: color,
                 radius: Math.sqrt(data.value[0]) + 1,
-            })
+            });
             circle.on("click", () => {
                 const neededEvents = data.value[1]
                     .sort((a, b) => b.values.length - a.values.length)
@@ -657,57 +611,6 @@
     window.onresize = function () {
         updateSankey();
     };
-
-    d3.tsv("CAMEO.eventcodes.txt", function (data) {
-        eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 3);
-        selectedEventCodes = eventCodes.map(cameoElem => cameoElem.CAMEOEVENTCODE);
-        const containerEventSelection = $("#accordion");
-
-        const topEvents = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
-
-        topEvents.forEach((cameoElem, index) => {
-            const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
-            $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).addClass(index === 0 ? "selected" : null).appendTo(accBtn);
-
-            const accContent = $("<div/>").addClass("acc-content" + (index === 0 ? " open" : "")).appendTo(containerEventSelection);
-            $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
-        });
-
-        eventCodes.forEach((cameoElem, index) => {
-            const id = "box-" + cameoElem.CAMEOEVENTCODE;
-            const container = $(`#events-${cameoElem.CAMEOEVENTCODE.substr(0, 2)}`);
-
-            $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
-                $("<input/>", {
-                    "type": "checkbox",
-                    "checked": true,
-                    "id": id
-                }).change(
-                    function () {
-                        if ($(this).is(":checked") && selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE) < 0) {
-                            selectedEventCodes.push(cameoElem.CAMEOEVENTCODE);
-                        } else if (!$(this).is(":checked")) {
-                            const indexElem = selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE);
-                            if (indexElem >= 0) {
-                                selectedEventCodes.splice(indexElem, 1);
-                            }
-                        }
-                    }
-                )
-            ).append(
-                $("<div/>").addClass("state p-success").append(
-                    $("<label>" + cameoElem.CAMEOEVENTCODE.substr(2) + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
-                        "for": id,
-                        "class": "label_event_checkbox"
-                    })
-                )
-            ).appendTo(container);
-
-            if (index === eventCodes.length - 1) {
-                prepareAccordion();
-            }
-        });
-    });
 
     //preprocessMentions();
 </script>

@@ -261,6 +261,18 @@
     height: 100px;
 }
 
+.bar {
+  fill: steelblue;
+}
+
+.bar:hover {
+  fill: brown;
+}
+
+.axis--x path {
+  display: none;
+}
+
 .label_event_checkbox {
 }
 

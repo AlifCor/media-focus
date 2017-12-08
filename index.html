@@ -14,7 +14,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script type="text/javascript" src="cdn/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
 
 </head>
 
@@ -81,6 +81,8 @@
     const SOURCE_COUNTRY_COL = "source_country_name";
     const EVENT_COUNTRY_COL = "country_name";
     const EVENT_CODE_TYPE = "EventRootCode";
+    const LAT_COL = "ActionGeo_Lat";
+    const LONG_COL = "ActionGeo_Long";
 
 
     // Here we declare the general DOM references
@@ -170,18 +172,92 @@
 
     function drawData(dataToShow, groupingFunction, canvas, color) {
         const grouped = d3.nest()
-            .key(d => [groupingFunction(d["ActionGeo_Lat"]), groupingFunction(d["ActionGeo_Long"])])
-            .rollup(group => group.length)
+            .key(d => [groupingFunction(d[LAT_COL]), groupingFunction(d[LONG_COL])])
+            .rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group), d3.nest().key(d => d[SOURCE_COUNTRY_COL]).key(d => d["QuadClass"]).entries(group)])
             .entries(dataToShow);
         grouped.forEach((data, index) => {
             const latlngArray = data.key.split(",");
-            let latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
+            const latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
             let circle = L.circleMarker(latlng, {
                 renderer: canvas,
                 stroke: false,
                 fillColor: color,
-                radius: Math.sqrt(data.value) + 1,
-            }).addTo(map);
+                radius: Math.sqrt(data.value[0]) + 1,
+            })
+            circle.on("click", () => {
+                const neededEvents = data.value[1]
+                    .sort((a, b) => b.values.length - a.values.length)
+                    .slice(0, 6);
+                let div = document.createElement("div");
+                console.log(data.value[2])
+                console.log(neededEvents)
+                //let div = $("<div style=\"width: 200px; height: 200px;\"><svg width=\"200px\" height=\"200px\"><svg/></div>")[0];
+                //let svg = d3.select(div).select("svg");
+                let svg = d3.select(div)
+                    .attr("width", 200)
+                    .attr("height", 200)
+                .append("svg")
+                    .attr("width", 200)
+                    .attr("height", 200);
+                /*
+
+                let margin = {top: 20, right: 20, bottom: 30, left: 40},
+                let width = +svg.attr("width") - margin.left - margin.right,
+                let height = +svg.attr("height") - margin.top - margin.bottom,
+                let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                let x = d3.scaleBand()
+                    .rangeRound([0, width])
+                    .paddingInner(0.05)
+                    .align(0.1);
+                let y = d3.scaleLinear()
+                    .rangeRound([height, 0]);
+                let z = d3.scaleOrdinal()
+                    .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+                */
+                console.log(svg.attr("width"))
+                let margin = {top: 20, right: 20, bottom: 30, left: 40};
+                let width = +svg.attr("width") - margin.left - margin.right,
+                    height = +svg.attr("height") - margin.top - margin.bottom;
+
+                console.log(width)
+
+                let x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
+                    y = d3.scaleLinear().rangeRound([height, 0]);
+
+                let g = svg.append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                x.domain(neededEvents.map(function(d) { return d.key; }));
+                y.domain([0, d3.max(neededEvents, function(d) { return d.values.length; })]);
+
+                g.append("g")
+                    .attr("class", "axis axis--x")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x));
+
+                g.append("g")
+                    .attr("class", "axis axis--y")
+                    .call(d3.axisLeft(y).ticks(10, "%"))
+                .append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("y", 6)
+                    .attr("dy", "0.71em")
+                    .attr("text-anchor", "end")
+                    .text("Number of events");
+
+                g.selectAll(".bar")
+                    .data(neededEvents)
+                .enter().append("rect")
+                    .attr("class", "bar")
+                    .attr("x", function(d) { return x(d.key); })
+                    .attr("y", function(d) { return y(d.values.length); })
+                    .attr("width", x.bandwidth())
+                    .attr("height", function(d) { return height - y(d.values.length); });
+
+                circle.bindPopup(div);
+                circle.openPopup();
+            })
+            circle.addTo(map);
         })
     }
 

@@ -20,11 +20,15 @@ let firstLoad = true;
 
 // Here we declare the general DOM references
 let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map = undefined;
+let paneGeojson = undefined;
 
 let mainCanvas = L.canvas();
 let currentClusteringLevel = -1;
 
 $(() => {
+
+    $('#mydiv').focus();
+
     // We create our Leaflet map
     map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);
     sideEventsDrawer = $("#side_menu");
@@ -109,10 +113,10 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             //let div = $("<div style=\"width: 200px; height: 200px;\"><svg width=\"200px\" height=\"200px\"><svg/></div>")[0];
             //let svg = d3.select(div).select("svg");
             let svg = d3.select(div)
-                .attr("width", 200)
+                .attr("width", 300)
                 .attr("height", 200)
                 .append("svg")
-                .attr("width", 200)
+                .attr("width", 300)
                 .attr("height", 200);
             /*
 
@@ -129,7 +133,6 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             let z = d3.scaleOrdinal()
                 .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
             */
-            console.log(svg.attr("width"))
             let margin = {top: 20, right: 20, bottom: 30, left: 40};
             let width = +svg.attr("width") - margin.left - margin.right,
                 height = +svg.attr("height") - margin.top - margin.bottom;
@@ -142,8 +145,10 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
 
             let keys = QUAD_CLASS_KEYS;
             x.domain(eventsNestedQuadClass.map(d => d["country"]));
-            y.domain([0, d3.max(eventsNestedQuadClass.map(d => d["total"]))]).nice();
+            y.domain([0, d3.max(eventsNestedQuadClass, d => d["total"])]).nice();
             z.domain(keys);
+
+            console.log(d3.stack().keys(keys)(eventsNestedQuadClass))
 
             g.append("g")
                 .selectAll("g")
@@ -153,27 +158,48 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 .selectAll("rect")
                 .data(function(d) { return d; })
                 .enter().append("rect")
-                  .attr("x", function(d) { return x(d.data.State); })
+                  .attr("x", function(d) { return x(d.data["country"]); })
                   .attr("y", function(d) { return y(d[1]); })
                   .attr("height", function(d) { return y(d[0]) - y(d[1]); })
                   .attr("width", x.bandwidth());
 
-              g.append("g")
-                  .attr("class", "axis")
-                  .attr("transform", "translate(0," + height + ")")
-                  .call(d3.axisBottom(x));
+            g.append("g")
+              .attr("class", "axis")
+              .attr("transform", "translate(0," + height + ")")
+              .call(d3.axisBottom(x));
 
-              g.append("g")
-                  .attr("class", "axis")
-                  .call(d3.axisLeft(y).ticks(null, "s"))
-                .append("text")
-                  .attr("x", 2)
-                  .attr("y", y(y.ticks().pop()) + 0.5)
-                  .attr("dy", "0.32em")
-                  .attr("fill", "#000")
-                  .attr("font-weight", "bold")
-                  .attr("text-anchor", "start")
-                  .text("Population");
+            g.append("g")
+              .attr("class", "axis")
+              .call(d3.axisLeft(y).ticks(null, "s"))
+            .append("text")
+              .attr("x", 2)
+              .attr("y", y(y.ticks().pop()) + 0.5)
+              .attr("dy", "0.32em")
+              .attr("fill", "#000")
+              .attr("font-weight", "bold")
+              .attr("text-anchor", "start")
+              .text("Number of events");
+
+            let legend = g.append("g")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 8)
+                .attr("text-anchor", "end")
+                .selectAll("g")
+                .data(keys.slice().reverse())
+                    .enter().append("g")
+                    .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+            legend.append("rect")
+                .attr("x", width - 19)
+                .attr("width", 19)
+                .attr("height", 19)
+                .attr("fill", z);
+
+            legend.append("text")
+                .attr("x", width - 24)
+                .attr("y", 9.5)
+                .attr("dy", "0.32em")
+                .text(function(d) { return d; });
             /*
             let g = svg.append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -331,14 +357,28 @@ function onEachFeature(feature, layer) {
 }
 
 $.get(geoJSONData, function (data) {
+    paneGeojson = map.createPane("geojson");
+    paneGeojson.style.zIndex = 400;
     L.geoJson(data, {
-        clickable: true,
+        clickable: false,
         style: customStyle,
         onEachFeature: onEachFeature,
+        pane: "geojson",
     }).addTo(map)
 
 });
 
+$(document).keydown(function(event){
+    if(event.key === "Control"){
+        paneGeojson.style.zIndex = 390;
+    }
+})
+
+$(document).keyup(function(event){
+    if(event.key === "Control"){
+        paneGeojson.style.zIndex = 400;
+    }
+})
 
 const defaultCountry = "United States";
 let selectedCountry = defaultCountry;

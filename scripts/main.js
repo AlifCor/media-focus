@@ -4,18 +4,93 @@ function getFilteredEvents(callback) {
 
 // Constants:
 const SOURCE_COUNTRY_COL = "source_country_name";
+const QUAD_CLASS_COL = "QuadClass";
 const EVENT_COUNTRY_COL = "country_name";
 const EVENT_CODE_TYPE = "EventRootCode";
 const LAT_COL = "ActionGeo_Lat";
 const LONG_COL = "ActionGeo_Long";
 
+const MAX_ZOOM = 18;
+const CLUSTER_DEGREE = 8;
+const CLUSTER_STEP = Math.floor(MAX_ZOOM / CLUSTER_DEGREE);
+const CIRCLE_RADIUS_FACTOR = 0.04;
+
 let firstLoad = true;
 
 // Here we declare the general DOM references
 let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map = undefined;
+let overlayPane = undefined;
 
 let mainCanvas = L.canvas();
 let currentClusteringLevel = -1;
+
+let geoJSONData = "data/custom.geo.json";
+let customStyle = {
+    stroke: false,
+    //weight: 1.2,
+    cursor: "pointer",
+};
+
+function clickFeature(e, properties) {
+    let layer = e.target;
+    showCountryDetails(properties["name"]);
+}
+
+let boundingCountries = {};
+
+function onEachFeature(feature, layer) {
+    layer.on("click", function (e) {
+        clickFeature(e, feature.properties);
+    });
+    /*
+    layer.addEventListener("mouseover", function () {
+        console.log("mouseover")
+        this.setStyle({
+            "fillColor": "black",
+        });
+    });
+    layer.on("mouseout", function () {
+        console.log("mouseout");
+        this.setStyle({
+            "fillColor": "none",
+        });
+    });
+    */
+    boundingCountries[feature.properties["name"]] = layer.getBounds();
+}
+
+$.get(geoJSONData, function (data) {
+    overlayPane = map.createPane("overlays-json-circles")
+    overlayPane.style.zIndex = 300;
+    L.geoJson(data, {
+        clickable: true,
+        style: customStyle,
+        onEachFeature: onEachFeature,
+        pane: overlayPane,
+    }).addTo(map)
+
+    L.DomEvent.on(overlayPane, 'click', function(e) {
+        if (e._stopped) { return; }
+        var target = e.target;
+        var stopped;
+        var removed;
+        var ev = new MouseEvent(e.type, e)
+
+        removed = {node: target, display: target.style.display};
+        target.style.display = 'none';
+        target = document.elementFromPoint(e.clientX, e.clientY);
+
+        if (target && target !== overlayPane) {
+            stopped = !target.dispatchEvent(ev);
+            if (stopped || ev._stopped) {
+                L.DomEvent.stop(e);
+            }
+        }
+
+        removed.node.style.display = removed.display;
+    });
+
+});
 
 $(() => {
     // We create our Leaflet map
@@ -28,35 +103,59 @@ $(() => {
 
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
         attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
-        maxZoom: 18,
+        maxZoom: MAX_ZOOM,
         id: 'mapbox.streets',
         accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
     }).addTo(map);
 
     renderMainCanvas();
+    map.on("zoomend", function(){
+        console.log(map.getZoom())
+        renderMainCanvas();
+    })
 });
 
 function drawData(dataToShow, groupingFunction, canvas, color) {
+    function meand3(group, attrib){
+        return d3.mean(group.map(d => parseFloat(d[attrib])))
+    }
     const grouped = d3.nest()
         .key(d => [groupingFunction(d[LAT_COL]), groupingFunction(d[LONG_COL])])
-        .rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group), d3.nest().key(d => d[SOURCE_COUNTRY_COL]).key(d => d["QuadClass"]).entries(group)])
+        .rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group),
+            d3.nest().key(d => d[SOURCE_COUNTRY_COL]).key(d => d["QuadClass"]).entries(group),
+            [meand3(group, LAT_COL), meand3(group, LONG_COL)]])
         .entries(dataToShow);
+    const currentZoom = map.getZoom();
     grouped.forEach((data, index) => {
+        const meanCoord = data.value[3];
         const latlngArray = data.key.split(",");
-        const latlng = new L.LatLng(latlngArray[0], latlngArray[1]);
+        const latlng = new L.LatLng(meanCoord[0], meanCoord[1]);
         let circle = L.circleMarker(latlng, {
             renderer: canvas,
             stroke: false,
             fillColor: color,
-            radius: Math.sqrt(data.value[0]) + 1,
+            pane: "overlays-json-circles",
+            radius: (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2**(CLUSTER_STEP * 0.8 * currentClusteringLevel),
+        });
+        circle.on('mouseover', function(){
+            circle.setStyle({ fillOpacity: 0.5});
+        });
+
+        // Un-highlight the marker on hover out
+        circle.on('mouseout', function(){
+            circle.setStyle({ fillOpacity: 0.2});
         });
         circle.on("click", () => {
             const neededEvents = data.value[1]
                 .sort((a, b) => b.values.length - a.values.length)
                 .slice(0, 6);
+            neededEvents.map(country => {
+
+                d3.nest().key(d => d[QUAD])country.values
+            })
             let div = document.createElement("div");
-            console.log(data.value[2])
             console.log(neededEvents)
+
             //let div = $("<div style=\"width: 200px; height: 200px;\"><svg width=\"200px\" height=\"200px\"><svg/></div>")[0];
             //let svg = d3.select(div).select("svg");
             let svg = d3.select(div)
@@ -85,7 +184,6 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             let width = +svg.attr("width") - margin.left - margin.right,
                 height = +svg.attr("height") - margin.top - margin.bottom;
 
-            console.log(width)
 
             let x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
                 y = d3.scaleLinear().rangeRound([height, 0]);
@@ -134,36 +232,32 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             circle.openPopup();
         })
         circle.addTo(map);
+        //
     })
 }
 
 function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
-    if (doBefore !== undefined) {
-        doBefore();
-    }
-
     function getClusteringLevel(zoomLevel) {
-        if (zoomLevel >= 0 && zoomLevel < 6) {
-            return 0;
-        } else if (zoomLevel >= 6) {
-            return 1;
-        }
+        return Math.floor(zoomLevel / CLUSTER_STEP)
     }
 
     const currentZoom = map.getZoom();
     const newClusteringLevel = getClusteringLevel(currentZoom);
+    console.log(currentClusteringLevel)
+    console.log(newClusteringLevel)
     if (newClusteringLevel !== currentClusteringLevel) {
+        console.log("Changing")
+        if (doBefore !== undefined) {
+            doBefore();
+        }
+        currentClusteringLevel = newClusteringLevel;
         mainCanvas.removeFrom(map);
-        let groupingFunction = (coord) => coord;
-        switch (currentClusteringLevel) {
-            case 0:
-                groupingFunction = (coord) => (Math.round(coord));
-                break;
-            case 1:
-                groupingFunction = (coord) => coord;
-                break;
-            default:
-                break;
+        mainCanvas = L.canvas();
+        let groupingFunction = undefined;
+        if(currentClusteringLevel >= CLUSTER_DEGREE){
+            groupingFunction = coord => coord;
+        } else {
+            groupingFunction = coord => round(coord, 1 / (2**currentClusteringLevel));
         }
         getFilteredEvents((filteredEvents) => {
                 drawData(filteredEvents, groupingFunction, mainCanvas, "red");
@@ -184,7 +278,6 @@ function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScr
             }
         );
     }
-    currentClusteringLevel = newClusteringLevel;
 }
 
 // Corresponds to the elements we want to show when we hover on the sankey links
@@ -215,50 +308,5 @@ let canvas = L.canvas();
 let canvasFilter = L.canvas();
 // let currentClusteringLevel = -1;
 
-let geoJSONData = "data/custom.geo.json";
-let customStyle = {
-    stroke: false,
-    //weight: 1.2,
-    zIndex: 2,
-    cursor: "pointer",
-};
-
-function clickFeature(e, properties) {
-    let layer = e.target;
-    showCountryDetails(properties["name"]);
-}
-
-let boundingCountries = {};
-
-function onEachFeature(feature, layer) {
-    layer.on("click", function (e) {
-        clickFeature(e, feature.properties);
-    });
-    layer.addEventListener("mouseover", function () {
-        console.log("mouseover")
-        this.setStyle({
-            "fillColor": "black",
-        });
-    });
-    layer.on("mouseout", function () {
-        console.log("mouseout");
-        this.setStyle({
-            "fillColor": "none",
-        });
-    });
-    boundingCountries[feature.properties["name"]] = layer.getBounds();
-}
-
-$.get(geoJSONData, function (data) {
-
-    L.geoJson(data, {
-        clickable: true,
-        style: customStyle,
-        onEachFeature: onEachFeature,
-    }).addTo(map);
-});
-
 const defaultCountry = "United States";
 let selectedCountry = defaultCountry;
-
-//preprocessMentions();

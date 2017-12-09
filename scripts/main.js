@@ -20,7 +20,6 @@ let firstLoad = true;
 
 // Here we declare the general DOM references
 let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map = undefined;
-let overlayPane = undefined;
 
 let mainCanvas = L.canvas();
 let currentClusteringLevel = -1;
@@ -61,34 +60,11 @@ function onEachFeature(feature, layer) {
 }
 
 $.get(geoJSONData, function (data) {
-    overlayPane = map.createPane("overlays-json-circles")
-    overlayPane.style.zIndex = 300;
     L.geoJson(data, {
         clickable: true,
         style: customStyle,
         onEachFeature: onEachFeature,
     }).addTo(map)
-
-    L.DomEvent.on(overlayPane, 'click', function(e) {
-        if (e._stopped) { return; }
-        var target = e.target;
-        var stopped;
-        var removed;
-        var ev = new MouseEvent(e.type, e)
-
-        removed = {node: target, display: target.style.display};
-        target.style.display = 'none';
-        target = document.elementFromPoint(e.clientX, e.clientY);
-
-        if (target && target !== overlayPane) {
-            stopped = !target.dispatchEvent(ev);
-            if (stopped || ev._stopped) {
-                L.DomEvent.stop(e);
-            }
-        }
-
-        removed.node.style.display = removed.display;
-    });
 
 });
 
@@ -133,7 +109,6 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             renderer: canvas,
             stroke: false,
             fillColor: color,
-            pane: "overlays-json-circles",
             radius: (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2**(CLUSTER_STEP * 0.8 * currentClusteringLevel),
         });
         circle.on('mouseover', function(){

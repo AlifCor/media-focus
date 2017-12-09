@@ -24,50 +24,6 @@ let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map = undefined;
 let mainCanvas = L.canvas();
 let currentClusteringLevel = -1;
 
-let geoJSONData = "data/custom.geo.json";
-let customStyle = {
-    stroke: false,
-    //weight: 1.2,
-    cursor: "pointer",
-};
-
-function clickFeature(e, properties) {
-    let layer = e.target;
-    showCountryDetails(properties["name"]);
-}
-
-let boundingCountries = {};
-
-function onEachFeature(feature, layer) {
-    layer.on("click", function (e) {
-        clickFeature(e, feature.properties);
-    });
-    /*
-    layer.addEventListener("mouseover", function () {
-        console.log("mouseover")
-        this.setStyle({
-            "fillColor": "black",
-        });
-    });
-    layer.on("mouseout", function () {
-        console.log("mouseout");
-        this.setStyle({
-            "fillColor": "none",
-        });
-    });
-    */
-    boundingCountries[feature.properties["name"]] = layer.getBounds();
-}
-
-$.get(geoJSONData, function (data) {
-    L.geoJson(data, {
-        clickable: true,
-        style: customStyle,
-        onEachFeature: onEachFeature,
-    }).addTo(map)
-
-});
-
 $(() => {
     // We create our Leaflet map
     map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);
@@ -338,6 +294,51 @@ let svg = d3.select("#container_map").select("svg"),
 let canvas = L.canvas();
 let canvasFilter = L.canvas();
 // let currentClusteringLevel = -1;
+
+let geoJSONData = "data/custom.geo.json";
+let customStyle = {
+    stroke: false,
+    //weight: 1.2,
+    cursor: "pointer",
+};
+
+function clickFeature(e, properties) {
+    let layer = e.target;
+    showCountryDetails(properties["name"]);
+}
+
+let boundingCountries = {};
+
+function onEachFeature(feature, layer) {
+    layer.on("click", function (e) {
+        clickFeature(e, feature.properties);
+    });
+    /*
+    layer.addEventListener("mouseover", function () {
+        console.log("mouseover")
+        this.setStyle({
+            "fillColor": "black",
+        });
+    });
+    layer.on("mouseout", function () {
+        console.log("mouseout");
+        this.setStyle({
+            "fillColor": "none",
+        });
+    });
+    */
+    boundingCountries[feature.properties["name"]] = layer.getBounds();
+}
+
+$.get(geoJSONData, function (data) {
+    L.geoJson(data, {
+        clickable: true,
+        style: customStyle,
+        onEachFeature: onEachFeature,
+    }).addTo(map)
+
+});
+
 
 const defaultCountry = "United States";
 let selectedCountry = defaultCountry;

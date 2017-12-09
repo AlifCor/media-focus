@@ -5,6 +5,7 @@ function getFilteredEvents(callback) {
 // Constants:
 const SOURCE_COUNTRY_COL = "source_country_name";
 const QUAD_CLASS_COL = "QuadClass";
+const QUAD_CLASS_KEYS = ["Verbal Cooperation", "Material Cooperation", "Verbal Conflict", "Material Conflict"];
 const EVENT_COUNTRY_COL = "country_name";
 const EVENT_CODE_TYPE = "EventRootCode";
 const LAT_COL = "ActionGeo_Lat";
@@ -110,7 +111,6 @@ $(() => {
 
     renderMainCanvas();
     map.on("zoomend", function(){
-        console.log(map.getZoom())
         renderMainCanvas();
     })
 });
@@ -149,12 +149,32 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             const neededEvents = data.value[1]
                 .sort((a, b) => b.values.length - a.values.length)
                 .slice(0, 6);
-            neededEvents.map(country => {
+            const eventsNestedQuadClass = neededEvents.map(country => {
+                const tempNest = d3.nest()
+                    .key(d => d[QUAD_CLASS_COL])
+                    .rollup(group => group.length)
+                    .entries(country.values)
 
-                d3.nest().key(d => d[QUAD])country.values
-            })
+                //We create an object where the key is the quad class and the value is the number of times it appears
+                const valuesQC = tempNest.reduce((prev, curr) => {prev[curr["key"]] = curr["value"]; return prev}, {});
+                const total = tempNest.reduce((total, pair) => total + pair["value"], 0);
+                let result = {
+                    "country": country.key,
+                    "total": total,
+                };
+                QUAD_CLASS_KEYS.forEach((elem, i) => {
+                    result[elem] = valuesQC["" + (i + 1)] || 0
+                })
+                return result;
+            })/*.map(country => ({
+                "country": country.key,
+                "Verbal Cooperation": country.values["1"] || 0,
+                "Material Cooperation": country.values["2"] || 0,
+                "Verbal Conflict": country.values["3"] || 0,
+                "Material Conflict": country.values["4"] || 0,
+            }))*/
             let div = document.createElement("div");
-            console.log(neededEvents)
+            console.log(eventsNestedQuadClass)
 
             //let div = $("<div style=\"width: 200px; height: 200px;\"><svg width=\"200px\" height=\"200px\"><svg/></div>")[0];
             //let svg = d3.select(div).select("svg");
@@ -183,11 +203,48 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             let margin = {top: 20, right: 20, bottom: 30, left: 40};
             let width = +svg.attr("width") - margin.left - margin.right,
                 height = +svg.attr("height") - margin.top - margin.bottom;
+            let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 
-            let x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
-                y = d3.scaleLinear().rangeRound([height, 0]);
+            let x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
+            let y = d3.scaleLinear().rangeRound([height, 0]);
+            let z = d3.scaleOrdinal().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b"]);
 
+            let keys = QUAD_CLASS_KEYS;
+            x.domain(eventsNestedQuadClass.map(d => d["country"]));
+            y.domain([0, d3.max(eventsNestedQuadClass.map(d => d["total"]))]).nice();
+            z.domain(keys);
+
+            g.append("g")
+                .selectAll("g")
+                .data(d3.stack().keys(keys)(eventsNestedQuadClass))
+                .enter().append("g")
+                  .attr("fill", function(d) { return z(d.key); })
+                .selectAll("rect")
+                .data(function(d) { return d; })
+                .enter().append("rect")
+                  .attr("x", function(d) { return x(d.data.State); })
+                  .attr("y", function(d) { return y(d[1]); })
+                  .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+                  .attr("width", x.bandwidth());
+
+              g.append("g")
+                  .attr("class", "axis")
+                  .attr("transform", "translate(0," + height + ")")
+                  .call(d3.axisBottom(x));
+
+              g.append("g")
+                  .attr("class", "axis")
+                  .call(d3.axisLeft(y).ticks(null, "s"))
+                .append("text")
+                  .attr("x", 2)
+                  .attr("y", y(y.ticks().pop()) + 0.5)
+                  .attr("dy", "0.32em")
+                  .attr("fill", "#000")
+                  .attr("font-weight", "bold")
+                  .attr("text-anchor", "start")
+                  .text("Population");
+            /*
             let g = svg.append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -227,7 +284,7 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 .attr("height", function (d) {
                     return height - y(d.values.length);
                 });
-
+                */
             circle.bindPopup(div);
             circle.openPopup();
         })

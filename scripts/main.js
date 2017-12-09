@@ -67,7 +67,6 @@ $.get(geoJSONData, function (data) {
         clickable: true,
         style: customStyle,
         onEachFeature: onEachFeature,
-        pane: overlayPane,
     }).addTo(map)
 
     L.DomEvent.on(overlayPane, 'click', function(e) {

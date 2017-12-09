@@ -39,3 +39,11 @@ The data on the Sankey diagram is not correct since we did not finish processing
 However we can already select the type of events we want to visualize on the heatmap, and it seems to work well.
 
 Asked the prof about it, he told that it seems good but it is pretty ugly (I didn't intend to make it pretty in the beginning). He told me that there are too many checkboxes which is right so we will need a way to cateogrize further the types of events.
+
+We met on Thursday and discussed with the design should be. One idea we have to respect is that we should not throw as much info as possible on the user as soon as he sees the webpage. So this is why we will show only the map with the event distribution in the beginning, without anything else. However, the user will see that he has the possibility to click on a country to see the country details in a drawer (drawers are a very good way to show information which we can hide at user will).
+The details will include the sankey news flow diagram (two diagrams: events-based and country-based as discussed above). We will also have another drawer on the right to allow the user to filter the types of events she wants. The professor told me that there were too many types of events and this is why we have decided to do an accordion checkbox structure to allow "hierarchical checkboxes". In this hierarchy, we will have only four "super event types" (corresponding to the QuadClass attribute in our GDELT dataset) which the user can expand to show the event types. Those 20 event types can be further divided but we don't plan to implement this for now (unless we have time).
+
+## Week 12
+We are still working on the visualization. Ali is working on the accordion side menu for filtering event types and he's trying to make it as beautiful as possible, Maxime is working on processing the data in python so that we have data which is as clean as possible and Ahmed is working on the visualization, drawing the circles on the map with Leaflet and d3 and showing the sankey diagram information.
+
+Another idea came to our mind: we can give the user the possibility to hover the mouse on the sankey links so that the events corresponding to the source and target countries are shown in a different color on the map (blue).

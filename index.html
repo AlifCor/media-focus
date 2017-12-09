@@ -1,1 +1,71 @@
-Hello World
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>Data visualization: news and sources of news</title>
+    <meta name="description" content="Data visualization : news and sources of news">
+    <meta name="author" content="Delisle, Kulovic, Hosseiny">
+
+    <link rel="stylesheet" type="text/css" href="styles/style.css">
+    <link rel="stylesheet" type="text/css" href="styles/accordion.css">
+    <link rel="stylesheet" type="text/css" href="styles/pretty-checkbox.min.css">
+
+    <link rel="stylesheet" href="styles/leaflet.css"/>
+    <link rel="stylesheet" href="styles/font-awesome.min.css">
+
+    <script src="scripts/leaflet.js"></script>
+    <script src="scripts/leaflet-heat.js"></script>
+    <script src="scripts/d3/d3.min.js"></script>
+    <script src="scripts/d3-sankey/d3-sankey.js"></script>
+    <script src="scripts/jquery-3.2.1.min.js"></script>
+    <script src="scripts/PruneCluster.js"></script>
+
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/drawer.js"></script>
+    <script src="scripts/sankey.js"></script>
+    <script src="scripts/main.js"></script>
+</head>
+
+<body>
+
+<!--
+Loading screen, inspired by the following tutorials:
+ - https://ihatetomatoes.net/create-custom-preloading-screen/
+ - https://ihatetomatoes.net/create-css3-spinning-preloader/
+ -->
+<div id="loader-wrapper">
+    <div id="loader"></div>
+
+    <div class="loader-section section-left"></div>
+    <div class="loader-section section-right"></div>
+
+</div>
+<div id="main_container">
+    <div id="side_country_details">
+        <svg id="container_sankey_countries">
+
+        </svg>
+
+        <svg id="container_sankey_events">
+
+        </svg>
+
+        <div id="country_close_btn">
+            <i id="icon_ccb" class="fa fa-arrow-left"></i>
+        </div>
+    </div>
+
+    <div id="container_map"></div>
+
+    <div id="side_menu">
+        <a id="pull"></a>
+        <div id="side_events">
+            <!-- Inspired by https://codepen.io/agrayson/pen/aLpKB -->
+            <div id="accordion" class="acc-container"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

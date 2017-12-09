@@ -51,6 +51,7 @@ def compute_processed_data(start, end=None, name='data_cleaned'):
     
     data_kept.loc[data_kept['source_country_name'] == 'Unknown', 'source_country_name'] = data_kept.loc[data_kept['source_country_name'] == 'Unknown', 'Sources'].apply(lambda x: get_tld(x)).apply(lambda x: dic[x] if x in dic else 'Unknown')
 
+
     name_to_alpha = {alpha_to_name[x].strip(): x for x in alpha_to_name}
     data_kept.loc[data_kept['source_country_name'] == 'South Korea', 'source_country_name'] = 'Korea, South'
     data_kept.loc[data_kept['source_country_name'] == 'North Korea', 'source_country_name'] = 'Korea, North'
@@ -65,6 +66,7 @@ def compute_processed_data(start, end=None, name='data_cleaned'):
     data_kept['source_country_code'] = data_kept['source_country_name'].apply(lambda x: name_to_alpha[x.strip()] if x.strip() in name_to_alpha else 'INT')
     
     data_kept = data_kept[['IsRootEvent', 'QuadClass', 'EventCode', 'EventRootCode', 'ActionGeo_Lat', 'ActionGeo_Long', 'country_code_alpha', 'source_country_code']]
+    
     data_kept.to_csv('../data/'+str(name)+'.csv')
     
     

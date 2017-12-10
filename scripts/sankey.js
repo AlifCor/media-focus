@@ -9,6 +9,21 @@ let currentSankeyEventsGraph = {
     links: [],
 };
 
+function groupBy(array, f)
+{
+  var groups = {};
+  array.forEach( function( o )
+  {
+    var group = JSON.stringify( f(o) );
+    groups[group] = groups[group] || [];
+    groups[group].push( o );
+  });
+  return Object.keys(groups).map( function( group )
+  {
+    return groups[group];
+  })
+}
+
 function updateSankey() {
     let selectionSankeyContainer = d3.select("#container_sankey_countries");
     selectionSankeyContainer.selectAll("svg > *").remove();
@@ -23,7 +38,7 @@ function updateSankey() {
 
     let formatNumber = d3.format(",.0f"),
         format = function (d) {
-            return formatNumber(d) + " TWh";
+            return formatNumber(d) + " News";
         },
         color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -132,113 +147,52 @@ function updateSankey() {
 
 function renderSankey() {
     getFilteredEvents(data => {
-        let countriesMentions = {};
-        let eventMentions = {};
-        let eventMentionsSelCountry = {};
 
-        data.forEach((row) => {
-            const sourceCountry = row[SOURCE_COUNTRY_COL];
-            const eventCountry = row[EVENT_COUNTRY_COL];
+        var node_names = []
+        var nodes = []
+        var link_values = []
 
-            if (!(sourceCountry in countriesMentions)) {
-                countriesMentions[sourceCountry] = {};
-            }
-            if (!(eventCountry in countriesMentions[sourceCountry])) {
-                countriesMentions[sourceCountry][eventCountry] = 0;
-            }
+        var filteredData = data.filter(d => d[EVENT_COUNTRY_COL] === selectedCountry);
+        var grouped = groupBy(filteredData, elem => elem[QUAD_CLASS_COL] + '#' + elem[SOURCE_COUNTRY_COL]);
+        var grouped2 = groupBy(filteredData, elem => elem[QUAD_CLASS_COL]);
+        grouped.forEach((group) => {
+          const val = group.length
+          const source = group[0][SOURCE_COUNTRY_COL]
+          const type = group[0][QUAD_CLASS_COL] + " "
 
-            countriesMentions[sourceCountry][eventCountry] += 1;
+          if (!(source in node_names)){
+            node_names.push(source)
+            nodes.push({id: node_names.length - 1, name: source})
+          }
+          if (!(type in node_names)){
+            node_names.push(type)
+            nodes.push({id: node_names.length - 1, name: type})
+          }
+          source_id = node_names.indexOf(source)
+          type_id = node_names.indexOf(type)
+          link_values.push({source: source_id, target: type_id, value: val})
 
-            const eventType = row[EVENT_CODE_TYPE];
-            if (!(eventType in eventMentions)) {
-                eventMentions[eventType] = {};
-            }
+      });
+      grouped2.forEach((group) => {
+        const val = group.length
+        const source = group[0][QUAD_CLASS_COL] + " "
+        const type = selectedCountry+" "
 
-            if (!(eventCountry in eventMentions[eventType])) {
-                eventMentions[eventType][eventCountry] = 0;
-            }
-
-            eventMentions[eventType][eventCountry] += 1;
-
-            if (sourceCountry === selectedCountry) {
-                if (!(eventType in eventMentionsSelCountry)) {
-                    eventMentionsSelCountry[eventType] = 0;
-                }
-                eventMentionsSelCountry[eventType] += 1
-            }
-        });
-
-        function normalizeMentions(mentions) {
-            return Object.keys(mentions).map(source => {
-                const currentSTArray = Object.keys(mentions[source]);
-                const sumMentions = currentSTArray.reduce((sum, target) => {
-                    return sum + mentions[source][target];
-                }, 0);
-                return [source, currentSTArray.map(country => [country, mentions[source][country] / sumMentions])];
-            })
+        if (!(source in node_names)){
+          node_names.push(source)
+          nodes.push({id: node_names.length - 1, name: source})
         }
+        if (!(type in node_names)){
+          node_names.push(type)
+          nodes.push({id: node_names.length - 1, name: type})
+        }
+        source_id = node_names.indexOf(source)
+        type_id = node_names.indexOf(type)
+        link_values.push({source: source_id, target: type_id, value: val})
 
-        countriesMentions = normalizeMentions(countriesMentions);
-        eventMentions = normalizeMentions(eventMentions);
+      });
+        let links = link_values;
 
-        // C is for countries, E for events
-        let selectedMentionsC = {};
-        let reverseSelectedMentionsC = {};
-
-        let selectedMentionsE = {};
-        let reverseSelectedMentionsE = {};
-
-        countriesMentions.forEach(sourceTarget => {
-            const sourceCountry = sourceTarget[0];
-            const targets = sourceTarget[1];
-            targets.forEach(target => {
-                const targetCountry = target[0];
-                const value = target[1];
-                if (targetCountry === selectedCountry) {
-                    reverseSelectedMentionsC[sourceCountry] = value;
-                } else if (sourceCountry === selectedCountry) {
-                    selectedMentionsC[targetCountry] = value;
-                }
-            });
-        });
-
-        eventMentions.forEach(sourceTarget => {
-            const sourceEvent = sourceTarget[0];
-            const targets = sourceTarget[1];
-            targets.forEach(target => {
-                const targetCountry = target[0];
-                const value = target[1];
-                if (targetCountry === selectedCountry) {
-                    reverseSelectedMentionsE[sourceEvent] = value;
-                }
-            });
-        });
-
-
-        reverseSelectedMentionsC = Object.entries(reverseSelectedMentionsC).sort((a, b) => b[1] - a[1]).splice(0, 8);
-        // Normalizing reverseSelectedMentionsC:
-        const sumRSM = reverseSelectedMentionsC.reduce((sum, elem) => sum + elem[1], 0);
-        reverseSelectedMentionsC = reverseSelectedMentionsC.map(elem => [elem[0], elem[1] / sumRSM]);
-        const reverseNodes = reverseSelectedMentionsC.map(elem => {
-            return {name: elem[0]};
-        });
-        const reverseLinks = reverseSelectedMentionsC.map((elem, index) => {
-            return {source: index, target: reverseNodes.length, value: elem[1]};
-        });
-
-        selectedMentionsC = Object.entries(selectedMentionsC).sort((a, b) => b[1] - a[1]).splice(0, 8);
-        // Normalizing reverseSelectedMentionsC:
-        const sumSM = selectedMentionsC.reduce((sum, elem) => sum + elem[1], 0);
-        selectedMentionsC = selectedMentionsC.map(elem => [elem[0], elem[1] / sumSM]);
-        let rightNodes = selectedMentionsC.map(elem => {
-            return {name: elem[0]};
-        });
-        const rightLinks = selectedMentionsC.map((elem, index) => {
-            return {source: reverseNodes.length, target: index + reverseNodes.length + 1, value: elem[1]}
-        });
-
-        const nodes = reverseNodes.concat([{name: selectedCountry}]).concat(rightNodes);
-        const links = reverseLinks.concat(rightLinks);
 
         currentSankeyCountriesGraph = {
             nodes: nodes,

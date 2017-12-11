@@ -147,7 +147,7 @@ function updateSankey() {
 
 function renderSankey() {
     getFilteredEvents(data => {
-
+        /*
         var node_names = []
         var nodes = []
         var link_values = []
@@ -172,31 +172,81 @@ function renderSankey() {
           type_id = node_names.indexOf(type)
           link_values.push({source: source_id, target: type_id, value: val})
 
-      });
-      grouped2.forEach((group) => {
-        const val = group.length
-        const source = group[0][QUAD_CLASS_COL] + " "
-        const type = selectedCountry+" "
+        });
+        grouped2.forEach((group) => {
+            const val = group.length
+            const source = group[0][QUAD_CLASS_COL] + " "
+            const type = selectedCountry+" "
 
-        if (!(source in node_names)){
-          node_names.push(source)
-          nodes.push({id: node_names.length - 1, name: source})
-        }
-        if (!(type in node_names)){
-          node_names.push(type)
-          nodes.push({id: node_names.length - 1, name: type})
-        }
-        source_id = node_names.indexOf(source)
-        type_id = node_names.indexOf(type)
-        link_values.push({source: source_id, target: type_id, value: val})
+            if (!(source in node_names)){
+              node_names.push(source)
+              nodes.push({id: node_names.length - 1, name: source})
+            }
+            if (!(type in node_names)){
+              node_names.push(type)
+              nodes.push({id: node_names.length - 1, name: type})
+            }
+            source_id = node_names.indexOf(source)
 
-      });
+            type_id = node_names.indexOf(type)
+            link_values.push({source: source_id, target: type_id, value: val})
+
+          });
         let links = link_values;
+        */
 
+        grouped_bis = d3.nest()
+            .key(d => d[SOURCE_COUNTRY_COL] + "#" + d[QUAD_CLASS_COL])
+            .rollup(group => group.length)
+            .entries(filteredData);
+
+        grouped_2_bis = d3.nest()
+            .key(d => d[QUAD_CLASS_COL])
+            .rollup(group => group.length)
+            .entries(filteredData);
+
+        // NOTE Seems nasty, but it is just a function to remove duplicates from an array:
+        // See https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
+        let uniq = a => [...new Set(a)];
+
+        const nodesSourceCountries = uniq(grouped_bis.map(link => link.key.split("#")[0]));
+
+        const nodesSourceEvents = uniq(grouped_bis.map(link => link.key.split("#")[1]));
+
+        // We add this one because we need one special node for the selected country
+        const finalNode = [selectedCountry + "_target"];
+
+        const nodesAll = nodesSourceCountries.concat(nodesSourceEvents).concat(finalNode)
+            .map(val => ({name: val}));
+
+        const nodesMapping = nodesAll.reduce((mapping, entry, index) => {
+            mapping[entry.name] = index;
+            return mapping;
+        }, {});
+
+        const linksSourceCountriesToEvents = grouped_bis.map(link => {
+            const pair = link.key.split("#");
+            return {
+                source: nodesMapping[pair[0]],
+                target: nodesMapping[pair[1]],
+                value: link.value
+            };
+        });
+
+        const linksEventsCountries = grouped_2_bis.map(link => {
+            const quadClass = link.key;
+            return {
+                source: nodesMapping[quadClass],
+                target: nodesMapping[selectedCountry + "_target"],
+                value: link.value,
+            };
+        });
+
+        const linksAll = linksSourceCountriesToEvents.concat(linksEventsCountries);
 
         currentSankeyCountriesGraph = {
-            nodes: nodes,
-            links: links
+            nodes: nodesAll,
+            links: linksAll,
         };
 
         updateSankey(currentSankeyCountriesGraph);

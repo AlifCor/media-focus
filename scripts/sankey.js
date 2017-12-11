@@ -1,3 +1,5 @@
+// We take the most representative countries and put the rest into "others"
+const COUNTRIES_TRUNCATE = 8;
 
 let currentSankeyCountriesGraph = {
     nodes: [],
@@ -9,6 +11,7 @@ let currentSankeyEventsGraph = {
     links: [],
 };
 
+/*
 function groupBy(array, f)
 {
   var groups = {};
@@ -22,6 +25,11 @@ function groupBy(array, f)
   {
     return groups[group];
   })
+}
+*/
+
+function groupByGetCount(array, f){
+    return d3.nest().key(f).rollup(group => group.length).entries(array);
 }
 
 function updateSankey() {
@@ -129,7 +137,8 @@ function updateSankey() {
         .attr("dy", "0.35em")
         .attr("text-anchor", "end")
         .text(function (d) {
-            return d.name;
+            // We split because of the _target or _source identifiers
+            return d.name.split("_")[0];
         })
         .filter(function (d) {
             return d.x0 < width / 2;
@@ -141,18 +150,21 @@ function updateSankey() {
 
     node.append("title")
         .text(function (d) {
-            return d.name + "\n" + format(d.value);
+            // We split because of the _target or _source identifiers
+            return d.name.split("_")[0] + "\n" + format(d.value);
         });
 }
 
 function renderSankey() {
     getFilteredEvents(data => {
-        /*
+
         var node_names = []
         var nodes = []
         var link_values = []
 
         var filteredData = data.filter(d => d[EVENT_COUNTRY_COL] === selectedCountry);
+
+        /*
         var grouped = groupBy(filteredData, elem => elem[QUAD_CLASS_COL] + '#' + elem[SOURCE_COUNTRY_COL]);
         var grouped2 = groupBy(filteredData, elem => elem[QUAD_CLASS_COL]);
         grouped.forEach((group) => {
@@ -195,15 +207,28 @@ function renderSankey() {
         let links = link_values;
         */
 
-        grouped_bis = d3.nest()
-            .key(d => d[SOURCE_COUNTRY_COL] + "#" + d[QUAD_CLASS_COL])
-            .rollup(group => group.length)
-            .entries(filteredData);
+        // This part is for detecting which countries are the most representative
 
-        grouped_2_bis = d3.nest()
-            .key(d => d[QUAD_CLASS_COL])
-            .rollup(group => group.length)
-            .entries(filteredData);
+        mostRepresentativeCountries = groupByGetCount(filteredData, d => d[SOURCE_COUNTRY_COL])
+            .sort((a, b) => b.value - a.value)
+            .map(group => group.key)
+            .slice(0, COUNTRIES_TRUNCATE);
+
+        const adaptedData = filteredData.map(row => {
+            if(mostRepresentativeCountries.indexOf(row[SOURCE_COUNTRY_COL]) >= 0){
+                return row;
+            } else {
+                row[SOURCE_COUNTRY_COL] = "other";
+                return row;
+            }
+        })
+
+        // Now that we have the adapted data where all the insignificant countries
+        // are put to "others" we can proceed with drawing
+
+        const grouped_bis = groupByGetCount(adaptedData, d => d[SOURCE_COUNTRY_COL] + "#" + d[QUAD_CLASS_COL]);
+
+        const grouped_2_bis = groupByGetCount(adaptedData, d => d[QUAD_CLASS_COL]);
 
         // NOTE Seems nasty, but it is just a function to remove duplicates from an array:
         // See https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array

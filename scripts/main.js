@@ -330,6 +330,7 @@ let customStyle = {
 
 function clickFeature(e, properties) {
     let layer = e.target;
+    console.log(properties.name)
     showCountryDetails(properties["name"]);
 }
 

@@ -1,12 +1,12 @@
 function getFilteredEvents(callback) {
-    d3.csv("november_lat_long_eventcode.csv", (data) => callback(data));
+    d3.csv("data_cleaned.csv", (data) => callback(data));
 }
 
 // Constants:
-const SOURCE_COUNTRY_COL = "source_country_name";
+const SOURCE_COUNTRY_COL = "source_country_code";
 const QUAD_CLASS_COL = "QuadClass";
 const QUAD_CLASS_KEYS = ["Verbal Cooperation", "Material Cooperation", "Verbal Conflict", "Material Conflict"];
-const EVENT_COUNTRY_COL = "country_name";
+const EVENT_COUNTRY_COL = "country_code_alpha";
 const EVENT_CODE_TYPE = "EventRootCode";
 const LAT_COL = "ActionGeo_Lat";
 const LONG_COL = "ActionGeo_Long";
@@ -331,7 +331,7 @@ let customStyle = {
 function clickFeature(e, properties) {
     let layer = e.target;
     console.log(properties.name)
-    showCountryDetails(properties["name"]);
+    showCountryDetails(properties["su_a3"]);
 }
 
 let boundingCountries = {};

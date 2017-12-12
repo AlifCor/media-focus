@@ -131,8 +131,6 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
             xScale.domain([0, maxTotal]).nice();
 
-            console.log(layers)
-
             let layer = g.selectAll(".layer")
                 .data(layers)
                 .enter().append("g")
@@ -161,6 +159,32 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
     			.attr("class", "axis axis--y")
     			.attr("transform", "translate(0,0)")
     			.call(yAxis);
+
+            let legend = svg.append("g")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 10)
+            .selectAll("g")
+                .data(QUAD_CLASS_KEYS)
+            .enter().append("g")
+                .attr("transform", function(d, i) {
+                    return "translate("+ (Math.floor(i / 2) * widthBarChart / 2) + ", " +
+                                        (i % 2 * 30) + ")";
+                })
+
+            console.log("height: " + legend.attr("height"))
+
+            legend.append("rect")
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", (d, i) => color(i));
+
+            legend.append("text")
+                .attr("height", 10)
+                .attr("y", 0)
+                .attr("x", 15)
+                .attr("dy", "0.32em")
+                .attr("height", 10)
+                .text((d, i) => d);
 
             circle.bindPopup(div);
             circle.openPopup();
@@ -256,18 +280,6 @@ function onEachFeature(feature, layer) {
     layer.on("click", function (e) {
         clickFeature(e, feature.properties);
     });
-    /*
-    layer.addEventListener("mouseover", function () {
-        this.setStyle({
-            "fillColor": "black",
-        });
-    });
-    layer.on("mouseout", function () {
-        this.setStyle({
-            "fillColor": "none",
-        });
-    });
-    */
     boundingCountries[feature.properties["name"]] = layer.getBounds();
 }
 

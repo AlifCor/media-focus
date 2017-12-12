@@ -249,6 +249,7 @@ function clickFeature(e, properties) {
     let layer = e.target;
     console.log(properties.name)
     showCountryDetails(properties["su_a3"]);
+
 }
 
 let boundingCountries = {};

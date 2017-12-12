@@ -1,6 +1,9 @@
 function getFilteredEvents(callback) {
     d3.csv("data_cleaned.csv", (data) => callback(data));
 }
+function getMapping(callback) {
+    d3.csv("mapping_code_name.csv", (data) => callback(data));
+}
 
 // Constants:
 const SOURCE_COUNTRY_COL = "source_country_code";

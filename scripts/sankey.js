@@ -153,6 +153,13 @@ function updateSankey() {
 }
 
 function renderSankey() {
+    mapping_cc = []
+    getMapping(data => {
+      data.map(country => {
+        mapping_cc[country.Code] = country.Name.trim()
+      });
+    });
+    console.log(mapping_cc)
     getFilteredEvents(data => {
         function getSankeyGraph(which){
             let selectedCountryCol, countriesCol;
@@ -210,13 +217,26 @@ function renderSankey() {
             // We add this one because we need one special node for the selected country
             const finalNode = [selectedCountry + "_" + which];
 
-            const nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
-                .map(val => ({name: val}));
+            function getNameFromCode(code) {
+              if (code == 'INT'){
+                return 'International'
+              } else if (code in mapping_cc) {
+                return mapping_cc[code]
+              } else {
+                return code
+              }
+            }
+
+            let nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
+                .map(val => ({name: val }));
 
             const nodesMapping = nodesAll.reduce((mapping, entry, index) => {
                 mapping[entry.name] = index;
                 return mapping;
             }, {});
+
+            nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
+                .map(val => ({name: getNameFromCode(val.trim()) }));
 
             const linksCountriesEvents = grouped_bis.map(link => {
                 const pair = link.key.split("#");

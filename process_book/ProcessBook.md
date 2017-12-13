@@ -38,10 +38,13 @@ Managed to program a first basic interface:
 The data on the Sankey diagram is not correct since we did not finish processing the data but it should be pretty good until the end of the week (if we don't get stuck in some annoying bugs).
 However we can already select the type of events we want to visualize on the heatmap, and it seems to work well.
 
-Asked the prof about it, he told that it seems good but it is pretty ugly (I didn't intend to make it pretty in the beginning). He told me that there are too many checkboxes which is right so we will need a way to cateogrize further the types of events.
+Asked the prof about it, he told that it seems good but it is pretty ugly (We didn't intend to make it pretty in the beginning). He told us that there are too many checkboxes, which is right, so we will need to find a way to cateogrize further the types of events.
 
 We met on Thursday and discussed with the design should be. One idea we have to respect is that we should not throw as much info as possible on the user as soon as he sees the webpage. So this is why we will show only the map with the event distribution in the beginning, without anything else. However, the user will see that he has the possibility to click on a country to see the country details in a drawer (drawers are a very good way to show information which we can hide at user will).
 The details will include the sankey news flow diagram (two diagrams: events-based and country-based as discussed above). We will also have another drawer on the right to allow the user to filter the types of events she wants. The professor told me that there were too many types of events and this is why we have decided to do an accordion checkbox structure to allow "hierarchical checkboxes". In this hierarchy, we will have only four "super event types" (corresponding to the QuadClass attribute in our GDELT dataset) which the user can expand to show the event types. Those 20 event types can be further divided but we don't plan to implement this for now (unless we have time).
+
+Regarding the localisation of each source of news, we have decided that we won't use the location of the server at all and only use the real position of the source when it is available. Although, we haven't decided yet what to do with the event
+whose news is unlocated.
 
 ## Week 12
 We are still working on the visualization. Ali is working on the accordion side menu for filtering event types and he's trying to make it as beautiful as possible, Maxime is working on processing the data in python so that we have data which is as clean as possible and Ahmed is working on the visualization, drawing the circles on the map with Leaflet and d3 and showing the sankey diagram information.
@@ -90,7 +93,10 @@ We noticed a small issue on our visualization: we keep the radius of the circles
 Our solution for that will simply be to vary the radius of the circles depending on the zoom level
 
 ### The loading problem
-One problem is that, even after preprocessing our data and removing a lot of stuff (there were some news for which it was difficult to find the source countries), we had a lot of news remaining (approximately 160000 for one single day). This is fine for one day (approximately 2-3 seconds to load) but it starts becoming annoying if we want to show data for more than that. For example, we thought about showing the data for one month or one week or even one year. But this is simply impossible. We already tried to aggregate the data but even after that there are too many events. We also thought about randomly removing data but this doesn't make a lot of sense. So, for now, we will show the data for one day. If we have time we will add a timeline for the user to be able to select the day they want.
+One problem is that, even after preprocessing our data and removing a lot of stuff, we had a lot of news remaining (approximately 160000 for one single day). This is fine for one day (approximately 2-3 seconds to load) but it starts becoming annoying if we want to show data for more than that. For example, we thought about showing the data for one month or one week or even one year. But this is simply impossible. We already tried to aggregate the data but even after that there are too many events. We also thought about randomly removing data but this doesn't make a lot of sense. So, for now, we will show the data for one day. If we have time we will add a timeline for the user to be able to select the day they want.
+
+### The missing source locations
+Around 25% of the event have an unknown source location. However, when we looked at which website those news came from, we saw almost all of them came from websites that are not affiliated with any country. For this reason, we decided to create a new category named "International" that contains every news mentionned above.
 
 ### Implementation problems
 

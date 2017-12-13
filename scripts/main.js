@@ -1,12 +1,16 @@
 function getFilteredEvents(callback, selectedEvents = lastSelectedEvents) {
-    d3.csv("november_lat_long_eventcode.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"]))));
+    d3.csv("data_cleaned.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"]))));
+}
+
+function getMapping(callback) {
+    d3.csv("mapping_code_name.csv", (data) => callback(data));
 }
 
 // Constants:
-const SOURCE_COUNTRY_COL = "source_country_name";
+const SOURCE_COUNTRY_COL = "source_country_code";
 const QUAD_CLASS_COL = "QuadClass";
 const QUAD_CLASS_KEYS = ["Verbal Cooperation", "Material Cooperation", "Verbal Conflict", "Material Conflict"];
-const EVENT_COUNTRY_COL = "country_name";
+const EVENT_COUNTRY_COL = "country_code_alpha";
 const EVENT_CODE_TYPE = "EventRootCode";
 const LAT_COL = "ActionGeo_Lat";
 const LONG_COL = "ActionGeo_Long";
@@ -105,167 +109,96 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                     result[elem] = valuesQC["" + (i + 1)] || 0
                 })
                 return result;
-            })
-            /*.map(country => ({
-                            "country": country.key,
-                            "Verbal Cooperation": country.values["1"] || 0,
-                            "Material Cooperation": country.values["2"] || 0,
-                            "Verbal Conflict": country.values["3"] || 0,
-                            "Material Conflict": country.values["4"] || 0,
-                        }))*/
+            });
+
             let div = document.createElement("div");
-            console.log(eventsNestedQuadClass)
 
-            //let div = $("<div style=\"width: 200px; height: 200px;\"><svg width=\"200px\" height=\"200px\"><svg/></div>")[0];
-            //let svg = d3.select(div).select("svg");
+            let widthBarChart = 300;
+            let heightBarChart = 36.7 * eventsNestedQuadClass.length + 80;
+
             let svg = d3.select(div)
-                .attr("width", 300)
-                .attr("height", 200)
+                .attr("width", widthBarChart)
+                .attr("height", heightBarChart)
                 .append("svg")
-                .attr("width", 300)
-                .attr("height", 200);
-            /*
+                .attr("width", widthBarChart)
+                .attr("height", heightBarChart);
 
-            let margin = {top: 20, right: 20, bottom: 30, left: 40},
-            let width = +svg.attr("width") - margin.left - margin.right,
-            let height = +svg.attr("height") - margin.top - margin.bottom,
-            let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-            let x = d3.scaleBand()
-                .rangeRound([0, width])
-                .paddingInner(0.05)
-                .align(0.1);
-            let y = d3.scaleLinear()
-                .rangeRound([height, 0]);
-            let z = d3.scaleOrdinal()
-                .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
-            */
-            let margin = {top: 20, right: 20, bottom: 30, left: 40};
+            let margin = {top: 50, right: 20, bottom: 30, left: 80};
             let width = +svg.attr("width") - margin.left - margin.right,
                 height = +svg.attr("height") - margin.top - margin.bottom;
             let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+            let xScale = d3.scaleLinear().rangeRound([0, width]);
+            let yScale = d3.scaleBand().rangeRound([height, 0]).padding(0.1);
+            let color = d3.scaleOrdinal(d3.schemeCategory20);
+            let xAxis = d3.axisBottom(xScale).ticks(5);
+            let yAxis = d3.axisLeft(yScale);
 
-            let x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
-            let y = d3.scaleLinear().rangeRound([height, 0]);
-            let z = d3.scaleOrdinal().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b"]);
+            let stack = d3.stack().keys(QUAD_CLASS_KEYS).offset(d3.stackOffsetNone);
+            let layers = stack(eventsNestedQuadClass);
+            yScale.domain(eventsNestedQuadClass.map(d => d["country"]));
+            let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
+            xScale.domain([0, maxTotal]).nice();
 
-            let keys = QUAD_CLASS_KEYS;
-            x.domain(eventsNestedQuadClass.map(d => d["country"]));
-            y.domain([0, d3.max(eventsNestedQuadClass, d => d["total"])]).nice();
-            z.domain(keys);
-
-            console.log(d3.stack().keys(keys)(eventsNestedQuadClass))
-
-            g.append("g")
-                .selectAll("g")
-                .data(d3.stack().keys(keys)(eventsNestedQuadClass))
+            let layer = g.selectAll(".layer")
+                .data(layers)
                 .enter().append("g")
-                .attr("fill", function (d) {
-                    return z(d.key);
-                })
-                .selectAll("rect")
-                .data(function (d) {
-                    return d;
-                })
-                .enter().append("rect")
-                .attr("x", function (d) {
-                    return x(d.data["country"]);
-                })
-                .attr("y", function (d) {
-                    return y(d[1]);
-                })
-                .attr("height", function (d) {
-                    return y(d[0]) - y(d[1]);
-                })
-                .attr("width", x.bandwidth());
+                .attr("class", "layer")
+                .style("fill", (d, i) => color(i));
+
+            layer.selectAll("rect")
+                .data(d => d)
+            .enter().append("rect")
+                .attr("y", d => yScale(d.data["country"]))
+                .attr("x", d => xScale(d[0]))
+                .attr("height", yScale.bandwidth())
+                .attr("width", d => xScale(d[1]) - xScale(d[0]))
+                .append("title")
+                    .text(function(d){
+                        console.log(neededEvents)
+                        return d.data["country"]
+                    })
 
             g.append("g")
-                .attr("class", "axis")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x));
+    			.attr("class", "axis axis--x")
+    			.attr("transform", "translate(0," + (height+5) + ")")
+    			.call(xAxis);
 
-            g.append("g")
-                .attr("class", "axis")
-                .call(d3.axisLeft(y).ticks(null, "s"))
-                .append("text")
-                .attr("x", 2)
-                .attr("y", y(y.ticks().pop()) + 0.5)
-                .attr("dy", "0.32em")
-                .attr("fill", "#000")
-                .attr("font-weight", "bold")
-                .attr("text-anchor", "start")
-                .text("Number of events");
+    		g.append("g")
+    			.attr("class", "axis axis--y")
+    			.attr("transform", "translate(0,0)")
+    			.call(yAxis);
 
-            let legend = g.append("g")
+            let legend = svg.append("g")
                 .attr("font-family", "sans-serif")
-                .attr("font-size", 8)
-                .attr("text-anchor", "end")
-                .selectAll("g")
-                .data(keys.slice().reverse())
-                .enter().append("g")
-                .attr("transform", function (d, i) {
-                    return "translate(0," + i * 20 + ")";
-                });
+                .attr("font-size", 10)
+            .selectAll("g")
+                .data(QUAD_CLASS_KEYS)
+            .enter().append("g")
+                .attr("transform", function(d, i) {
+                    return "translate("+ (Math.floor(i / 2) * widthBarChart / 2) + ", " +
+                                        (i % 2 * 30) + ")";
+                })
+
+            console.log("height: " + legend.attr("height"))
 
             legend.append("rect")
-                .attr("x", width - 19)
-                .attr("width", 19)
-                .attr("height", 19)
-                .attr("fill", z);
+                .attr("width", 10)
+                .attr("height", 10)
+                .attr("fill", (d, i) => color(i));
 
             legend.append("text")
-                .attr("x", width - 24)
-                .attr("y", 9.5)
+                .attr("height", 10)
+                .attr("y", 0)
+                .attr("x", 15)
                 .attr("dy", "0.32em")
-                .text(function (d) {
-                    return d;
-                });
-            /*
-            let g = svg.append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                .attr("height", 10)
+                .text((d, i) => d);
 
-            x.domain(neededEvents.map(function (d) {
-                return d.key;
-            }));
-            y.domain([0, d3.max(neededEvents, function (d) {
-                return d.values.length;
-            })]);
-
-            g.append("g")
-                .attr("class", "axis axis--x")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x));
-
-            g.append("g")
-                .attr("class", "axis axis--y")
-                .call(d3.axisLeft(y).ticks(10, "%"))
-                .append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 6)
-                .attr("dy", "0.71em")
-                .attr("text-anchor", "end")
-                .text("Number of events");
-
-            g.selectAll(".bar")
-                .data(neededEvents)
-                .enter().append("rect")
-                .attr("class", "bar")
-                .attr("x", function (d) {
-                    return x(d.key);
-                })
-                .attr("y", function (d) {
-                    return y(d.values.length);
-                })
-                .attr("width", x.bandwidth())
-                .attr("height", function (d) {
-                    return height - y(d.values.length);
-                });
-                */
             circle.bindPopup(div);
             circle.openPopup();
         });
         circle.addTo(map);
-        //
     })
 }
 
@@ -279,11 +212,7 @@ function renderMainCanvas(selectedEvents = lastSelectedEvents, doBefore = startL
 
     const currentZoom = map.getZoom();
     const newClusteringLevel = getClusteringLevel(currentZoom);
-    console.log(currentClusteringLevel)
-    console.log(newClusteringLevel)
-    if (newClusteringLevel !== currentClusteringLevel || selectedEvents !== lastSelectedEvents) {
-        lastSelectedEvents = selectedEvents;
-        console.log("Changing")
+    if (newClusteringLevel !== currentClusteringLevel) {
         if (doBefore !== undefined) {
             doBefore();
         }
@@ -354,7 +283,9 @@ let customStyle = {
 
 function clickFeature(e, properties) {
     let layer = e.target;
-    showCountryDetails(properties["name"]);
+    console.log(properties.name)
+    showCountryDetails(properties["su_a3"]);
+
 }
 
 let boundingCountries = {};
@@ -363,20 +294,6 @@ function onEachFeature(feature, layer) {
     layer.on("click", function (e) {
         clickFeature(e, feature.properties);
     });
-    /*
-    layer.addEventListener("mouseover", function () {
-        console.log("mouseover")
-        this.setStyle({
-            "fillColor": "black",
-        });
-    });
-    layer.on("mouseout", function () {
-        console.log("mouseout");
-        this.setStyle({
-            "fillColor": "none",
-        });
-    });
-    */
     boundingCountries[feature.properties["name"]] = layer.getBounds();
 }
 

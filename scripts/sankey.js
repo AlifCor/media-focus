@@ -1,158 +1,283 @@
+// We take the most representative countries and put the rest into "others"
+const COUNTRIES_TRUNCATE = 8;
 
-let currentSankeyCountriesGraph = {
+let currentSankeyTargetGraph = {
     nodes: [],
     links: [],
 };
 
-let currentSankeyEventsGraph = {
+let currentSankeySourceGraph = {
     nodes: [],
     links: [],
 };
 
-function groupBy(array, f)
-{
-  var groups = {};
-  array.forEach( function( o )
-  {
-    var group = JSON.stringify( f(o) );
-    groups[group] = groups[group] || [];
-    groups[group].push( o );
-  });
-  return Object.keys(groups).map( function( group )
-  {
-    return groups[group];
-  })
+function groupByGetCount(array, f){
+    return d3.nest().key(f).rollup(group => group.length).entries(array);
 }
 
 function updateSankey() {
-    let selectionSankeyContainer = d3.select("#container_sankey_countries");
-    selectionSankeyContainer.selectAll("svg > *").remove();
-    let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
+    function updateSankeyDiagram(idContainer, which){
+        let currentSankeyGraph;
+        switch(which){
+            case "source":
+                currentSankeyGraph = currentSankeySourceGraph;
+                break;
+            case "target":
+                currentSankeyGraph = currentSankeyTargetGraph;
+                break;
+        }
 
-    let svg = d3.select("svg"),
-        width = bboxSankeyContainer.width,
-        height = bboxSankeyContainer.height;
+        let selectionSankeyContainer = d3.select(idContainer);
+        selectionSankeyContainer.selectAll("svg > *").remove();
+        let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
 
-    svg.attr("width", width)
-        .attr("height", height);
+        let width = bboxSankeyContainer.width,
+            height = bboxSankeyContainer.height;
 
-    let formatNumber = d3.format(",.0f"),
-        format = function (d) {
-            return formatNumber(d) + " News";
-        },
-        color = d3.scaleOrdinal(d3.schemeCategory10);
+        selectionSankeyContainer.attr("width", width)
+            .attr("height", height);
 
-    let sankey = d3.sankey()
-        .nodeWidth(15)
-        .nodePadding(10)
-        .extent([[1, 1], [width - 1, height - 6]]);
+        let formatNumber = d3.format(",.0f"),
+            format = function (d) {
+                return formatNumber(d) + " News";
+            },
+            color = d3.scaleOrdinal(d3.schemeCategory10);
 
-    function handleMouseOverLink(d) {
-        d3.select(this).attr(
-            "stroke", "blue",
-        );
-        renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
-            row[EVENT_COUNTRY_COL] === d.target.name);
+        let sankey = d3.sankey()
+            .nodeWidth(15)
+            .nodePadding(10)
+            .extent([[1, 1], [width - 1, height - 6]]);
+
+        function handleMouseOverLink(d) {
+            d3.select(this).attr(
+                "stroke", "blue",
+            );
+            renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
+                row[EVENT_COUNTRY_COL] === d.target.name);
+        }
+
+        function handleMouseOutLink(d) {
+            d3.select(this).attr(
+                "stroke", "#000",
+            );
+            overCanvas.removeFrom(map);
+        }
+
+        function handleClickLink(d) {
+            let country = d.target.name;
+            map.fitBounds(boundingCountries[country]);
+        }
+
+        let link = selectionSankeyContainer.append("g")
+            .attr("class", "links")
+            .attr("fill", "none")
+            .attr("stroke", "#000")
+            .attr("stroke-opacity", 0.2)
+            .attr("border", "2px solid red")
+            .selectAll("path")
+
+        let node = selectionSankeyContainer.append("g")
+            .attr("class", "nodes")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", 10)
+            .selectAll("g");
+
+        sankey(currentSankeyGraph);
+
+        link = link
+            .data(currentSankeyGraph.links)
+            .enter().append("path")
+            .attr("d", d3.sankeyLinkHorizontal())
+            .attr("stroke-width", function (d) {
+                return Math.max(1, d.width);
+            })
+            .on("mouseover", handleMouseOverLink)
+            .on("mouseout", handleMouseOutLink)
+            .on("click", handleClickLink);
+
+        link.append("title")
+            .text(function (d) {
+                return d.source.name + " → " + d.target.name + "\n" + format(d.value);
+            });
+
+        node = node
+            .data(currentSankeyGraph.nodes)
+            .enter().append("g");
+
+        node.append("rect")
+            .attr("x", function (d) {
+                return d.x0;
+            })
+            .attr("y", function (d) {
+                return d.y0;
+            })
+            .attr("height", function (d) {
+                return d.y1 - d.y0;
+            })
+            .attr("width", function (d) {
+                return d.x1 - d.x0;
+            })
+
+            .attr("stroke", "#000");
+
+        node.append("text")
+            .attr("x", function (d) {
+                return d.x0 - 6;
+            })
+            .attr("y", function (d) {
+                return (d.y1 + d.y0) / 2;
+            })
+            .attr("dy", "0.35em")
+            .attr("text-anchor", "end")
+            .text(function (d) {
+                // We split because of the _target or _source identifiers
+                return d.name.split("_")[0];
+            })
+            .filter(function (d) {
+                return d.x0 < width / 2;
+            })
+            .attr("x", function (d) {
+                return d.x1 + 6;
+            })
+            .attr("text-anchor", "start");
+
+        node.append("title")
+            .text(function (d) {
+                // We split because of the _target or _source identifiers
+                return d.name.split("_")[0] + "\n" + format(d.value);
+            });
     }
 
-    function handleMouseOutLink(d) {
-        d3.select(this).attr(
-            "stroke", "#000",
-        );
-        overCanvas.removeFrom(map);
-    }
-
-    function handleClickLink(d) {
-        let country = d.target.name;
-        map.fitBounds(boundingCountries[country]);
-    }
-
-    let link = svg.append("g")
-        .attr("class", "links")
-        .attr("fill", "none")
-        .attr("stroke", "#000")
-        .attr("stroke-opacity", 0.2)
-        .attr("border", "2px solid red")
-        .selectAll("path")
-
-    let node = svg.append("g")
-        .attr("class", "nodes")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 10)
-        .selectAll("g");
-
-    sankey(currentSankeyCountriesGraph);
-
-    link = link
-        .data(currentSankeyCountriesGraph.links)
-        .enter().append("path")
-        .attr("d", d3.sankeyLinkHorizontal())
-        .attr("stroke-width", function (d) {
-            return Math.max(1, d.width);
-        })
-        .on("mouseover", handleMouseOverLink)
-        .on("mouseout", handleMouseOutLink)
-        .on("click", handleClickLink);
-
-    link.append("title")
-        .text(function (d) {
-            return d.source.name + " → " + d.target.name + "\n" + format(d.value);
-        });
-
-    node = node
-        .data(currentSankeyCountriesGraph.nodes)
-        .enter().append("g");
-
-    node.append("rect")
-        .attr("x", function (d) {
-            return d.x0;
-        })
-        .attr("y", function (d) {
-            return d.y0;
-        })
-        .attr("height", function (d) {
-            return d.y1 - d.y0;
-        })
-        .attr("width", function (d) {
-            return d.x1 - d.x0;
-        })
-
-        .attr("stroke", "#000");
-
-    node.append("text")
-        .attr("x", function (d) {
-            return d.x0 - 6;
-        })
-        .attr("y", function (d) {
-            return (d.y1 + d.y0) / 2;
-        })
-        .attr("dy", "0.35em")
-        .attr("text-anchor", "end")
-        .text(function (d) {
-            return d.name;
-        })
-        .filter(function (d) {
-            return d.x0 < width / 2;
-        })
-        .attr("x", function (d) {
-            return d.x1 + 6;
-        })
-        .attr("text-anchor", "start");
-
-    node.append("title")
-        .text(function (d) {
-            return d.name + "\n" + format(d.value);
-        });
+    updateSankeyDiagram("#container_sankey_countries", "target");
+    updateSankeyDiagram("#container_sankey_events", "source");
 }
 
 function renderSankey() {
+    mapping_cc = []
+    getMapping(data => {
+      data.map(country => {
+        mapping_cc[country.Code] = country.Name.trim()
+      });
+    });
+    console.log(mapping_cc)
     getFilteredEvents(data => {
-        /*
-        var node_names = []
-        var nodes = []
-        var link_values = []
+        function getSankeyGraph(which){
+            let selectedCountryCol, countriesCol;
+            switch(which){
+                case "target":
+                    selectedCountryCol = EVENT_COUNTRY_COL;
+                    countriesCol = SOURCE_COUNTRY_COL;
+                    break;
+                case "source":
+                    selectedCountryCol = SOURCE_COUNTRY_COL;
+                    countriesCol = EVENT_COUNTRY_COL;
+                    break;
+            }
+            const filteredData = data.filter(d => d[selectedCountryCol] === selectedCountry);
 
-        var filteredData = data.filter(d => d[EVENT_COUNTRY_COL] === selectedCountry);
+            // This part is for detecting which countries are the most representative
+
+            mostRepresentativeCountries = groupByGetCount(filteredData, d => d[countriesCol])
+                .sort((a, b) => b.value - a.value)
+                .map(group => group.key)
+                .slice(0, COUNTRIES_TRUNCATE);
+
+            const adaptedData = filteredData.map(row => {
+                if(mostRepresentativeCountries.indexOf(row[countriesCol]) >= 0){
+                    return row;
+                } else {
+                    row[countriesCol] = "other";
+                    return row;
+                }
+            });
+
+            // Now that we have the adapted data where all the insignificant countries
+            // are put to "others" we can proceed with drawing
+
+            let grouped_bis;
+            switch(which){
+                case "target":
+                    grouped_bis = groupByGetCount(adaptedData, d => d[SOURCE_COUNTRY_COL] + "#" + d[QUAD_CLASS_COL]);
+                    break;
+                case "source":
+                    grouped_bis = groupByGetCount(adaptedData, d => d[QUAD_CLASS_COL] + "#" + d[EVENT_COUNTRY_COL]);
+                    break;
+            }
+
+            let grouped_2_bis = groupByGetCount(adaptedData, d => d[QUAD_CLASS_COL]);
+
+            // NOTE Seems nasty, but it is just a function to remove duplicates from an array:
+            // See https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
+            let uniq = a => [...new Set(a)];
+
+            const nodesCountries = uniq(grouped_bis.map(link => link.key.split("#")[1]));
+
+            const nodesEvents = uniq(grouped_bis.map(link => link.key.split("#")[0]));
+
+            // We add this one because we need one special node for the selected country
+            const finalNode = [selectedCountry + "_" + which];
+
+            function getNameFromCode(code) {
+              if (code == 'INT'){
+                return 'International'
+              } else if (code in mapping_cc) {
+                return mapping_cc[code]
+              } else {
+                return code
+              }
+            }
+
+            let nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
+                .map(val => ({name: val }));
+
+            const nodesMapping = nodesAll.reduce((mapping, entry, index) => {
+                mapping[entry.name] = index;
+                return mapping;
+            }, {});
+
+            nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
+                .map(val => ({name: getNameFromCode(val.trim()) }));
+
+            const linksCountriesEvents = grouped_bis.map(link => {
+                const pair = link.key.split("#");
+                return {
+                    source: nodesMapping[pair[0]],
+                    target: nodesMapping[pair[1]],
+                    value: link.value
+                };
+            });
+
+            const linksCountry = grouped_2_bis.map(link => {
+                const quadClass = link.key;
+                if(which === "target"){
+                    return {
+                        source: nodesMapping[quadClass],
+                        target: nodesMapping[selectedCountry + "_target"],
+                        value: link.value,
+                    };
+                } else {
+                    return {
+                        source: nodesMapping[selectedCountry + "_source"],
+                        target: nodesMapping[quadClass],
+                        value: link.value,
+                    }
+                }
+            });
+
+            const linksAll = linksCountriesEvents.concat(linksCountry);
+
+            return {
+                nodes: nodesAll,
+                links: linksAll,
+            };
+        }
+
+        currentSankeyTargetGraph = getSankeyGraph("target");
+        currentSankeySourceGraph = getSankeyGraph("source");
+        updateSankey(currentSankeyTargetGraph);
+        updateSankey(currentSankeySourceGraph);
+
+        /*
         var grouped = groupBy(filteredData, elem => elem[QUAD_CLASS_COL] + '#' + elem[SOURCE_COUNTRY_COL]);
         var grouped2 = groupBy(filteredData, elem => elem[QUAD_CLASS_COL]);
         grouped.forEach((group) => {
@@ -195,61 +320,6 @@ function renderSankey() {
         let links = link_values;
         */
 
-        grouped_bis = d3.nest()
-            .key(d => d[SOURCE_COUNTRY_COL] + "#" + d[QUAD_CLASS_COL])
-            .rollup(group => group.length)
-            .entries(filteredData);
-
-        grouped_2_bis = d3.nest()
-            .key(d => d[QUAD_CLASS_COL])
-            .rollup(group => group.length)
-            .entries(filteredData);
-
-        // NOTE Seems nasty, but it is just a function to remove duplicates from an array:
-        // See https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
-        let uniq = a => [...new Set(a)];
-
-        const nodesSourceCountries = uniq(grouped_bis.map(link => link.key.split("#")[0]));
-
-        const nodesSourceEvents = uniq(grouped_bis.map(link => link.key.split("#")[1]));
-
-        // We add this one because we need one special node for the selected country
-        const finalNode = [selectedCountry + "_target"];
-
-        const nodesAll = nodesSourceCountries.concat(nodesSourceEvents).concat(finalNode)
-            .map(val => ({name: val}));
-
-        const nodesMapping = nodesAll.reduce((mapping, entry, index) => {
-            mapping[entry.name] = index;
-            return mapping;
-        }, {});
-
-        const linksSourceCountriesToEvents = grouped_bis.map(link => {
-            const pair = link.key.split("#");
-            return {
-                source: nodesMapping[pair[0]],
-                target: nodesMapping[pair[1]],
-                value: link.value
-            };
-        });
-
-        const linksEventsCountries = grouped_2_bis.map(link => {
-            const quadClass = link.key;
-            return {
-                source: nodesMapping[quadClass],
-                target: nodesMapping[selectedCountry + "_target"],
-                value: link.value,
-            };
-        });
-
-        const linksAll = linksSourceCountriesToEvents.concat(linksEventsCountries);
-
-        currentSankeyCountriesGraph = {
-            nodes: nodesAll,
-            links: linksAll,
-        };
-
-        updateSankey(currentSankeyCountriesGraph);
     })
 }
 

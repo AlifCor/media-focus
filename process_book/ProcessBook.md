@@ -46,4 +46,54 @@ The details will include the sankey news flow diagram (two diagrams: events-base
 ## Week 12
 We are still working on the visualization. Ali is working on the accordion side menu for filtering event types and he's trying to make it as beautiful as possible, Maxime is working on processing the data in python so that we have data which is as clean as possible and Ahmed is working on the visualization, drawing the circles on the map with Leaflet and d3 and showing the sankey diagram information.
 
-Another idea came to our mind: we can give the user the possibility to hover the mouse on the sankey links so that the events corresponding to the source and target countries are shown in a different color on the map (blue).
+### The hover idea:
+We thought of a new way to add interactivity to our sankey diagram. Maybe we could show additional information when the viewer hovers a link: when a link from a country to the selected country is hovered, we can color the link in a chosen color (let's say blue for the example) and then color all the corresponding events in the same blue. We can also add blue lines on the map which go from the source countries to the target events (for that we need the central geocoordinates for each country. [This](https://developers.google.com/public-data/docs/canonical/countries_csv) might be a good catch.)
+
+
+### The flow problem
+We realized that one thing was not so good with our sankey diagram. Actually, we don't event need a sankey diagram for this because we can represent such information with simple bar charts ! We simply need two bar charts: one for the source countries and one for the target countries (same for the event types). And also, the notion of flow does not really make sense in this context: the number of news which "enters" Switzerland is not the same as the number which "goes out". So we came up with this solution where, instead of putting the target countries on the right, we put the types of the source events.
+![alt text](images/flow_equal_sol.jpg)
+This way, the flow makes sense: the number of events (the width of the flow) is the same on both sides. However, this one has two disadvantages:
+* same as before: we can represent the information with bar charts. So we are just adding chart junk here.
+* it is not clear at first sight.
+
+We thought about dropping the idea of the sankey diagram but then, we came up with something much better:
+![alt text](images/sankey_final_sol.jpg)
+
+This diagram allows us to keep the sankey (somehow we absolutely wanted to keep the sankey diagram to show this "event flow" information) and the disadvantages we mentioned before disappear: it is more difficult to represent this with a bar chart (we could still represent it with a 2d histograms but it is visually more difficult to read than the sankey diagram) and it is much clearer.
+
+### circles: the nonprecision problem
+Now we have our visualization with our red circles on the map:
+![alt text](images/image_red_circles.png)
+So we can see the red circles which show the distribution of events on the map. We noticed one problem: look at the big red circle at the center. It is not really directed at a special big city (like the other big circles we can typically see on important cities like New York, Los Angeles or Washington) but it is one of the biggest circles in the US. Actually, the problem is the data: we have a lot of news where the GDELT team didn't have enough resources to compute the exact location of the event so they simply put it at the centroid of the United States. This problem is also visible for other countries (or states also). So what do we do about this ?
+
+* We can simply drop those events but this is rather complicated: we have to find the centroid for each country (or states) and to make sure that the geolocation of the event doesn't coincide with it. However, it would probably not be the exact same location (except if we find out how GDELT generated it) so we would probably have to include the notion of "proximity". If the event is near the centroid of the country then we drop eat. And here again new problems show up: what if an important city is located at or near the centroid of the country/state. What does it mean "to be near the centroid" ? How do we handle that for big and small countries (even tiny ones like Liechtenstein).
+* Or we can simply keep them. It is true that this information somehow disturbs the viewer but it is also a visualization of the GDELT dataset so we can keep it. Anyway, if the GDELT team finds more resources and is capable of geolocating these events with more precision in the future, our visualization will be cleaner !
+
+So obviously we chose to keep all the events.
+
+### circles: the details idea
+
+If we look on our map we have the circles which show the distribution of data. But how about we try to allow the user to look at the details for each circle if he clicks on them ?
+For example, we can have the countries which talk the most about that particular location. But we could also have the events so let's do a stacked bar chart for this:
+
+We might also do something more: we might show all the source -> target lines in blue and unzoom our map to see which countries are talking about this particular circle.
+
+### circles: the hovering problem
+Now that we have the possibility to click on a circle we have a new problem: there are two clickable layers and it seems like Leaflet doesn't like that. Our idea was that the user can click on circles but, if they click on a point which belongs to a country but is not a circle, then it is as if they clicked on the country and the sankey diagram for the selected country shows up on the left in the drawer. However, this is a bad idea because, sometimes, the dense distribution of the events might make it annoying to find a place where to click for the country details.
+
+So we found a very simple solution: if the user clicks somewhere on the map, then it is as if they clicked on the country. However, if they hold the Control key and click then the event is interpreted as a click on a circle. We just have to make this clear enough to the user.
+
+### circles: size with respect to zoom level
+We noticed a small issue on our visualization: we keep the radius of the circles constant with respect to the zoom level. This is not a problem if the zoom level is small and we see a lot of circles. However, if we zoom on a place and start searching for the circles where 1, 2 or few events occured then the size of the circles is very small (the same size it was on the unzoomed map) so it's rather annoying to "find them".
+
+Our solution for that will simply be to vary the radius of the circles depending on the zoom level
+
+### The loading problem
+One problem is that, even after preprocessing our data and removing a lot of stuff (there were some news for which it was difficult to find the source countries), we had a lot of news remaining (approximately 160000 for one single day). This is fine for one day (approximately 2-3 seconds to load) but it starts becoming annoying if we want to show data for more than that. For example, we thought about showing the data for one month or one week or even one year. But this is simply impossible. We already tried to aggregate the data but even after that there are too many events. We also thought about randomly removing data but this doesn't make a lot of sense. So, for now, we will show the data for one day. If we have time we will add a timeline for the user to be able to select the day they want.
+
+### Implementation problems
+
+
+
+## Week 13

@@ -23,16 +23,18 @@ function prepareAccordion() {
     });
 }
 
+let selectedEventCodesChanged = false;
+
 d3.tsv("CAMEO.eventcodes.txt", function (data) {
-        eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 3);
-        selectedEventCodes = eventCodes.map(cameoElem => cameoElem.CAMEOEVENTCODE);
+        const eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 3);
 
         const topEvents = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
 
         //On document ready, append to DOM
         $(() => {
-            const containerEventSelection = $("#accordion"), sideEventsDrawer = $("#side_menu"),
-                containerMap = $("#container_map"), sideMenu = $("#side_menu");
+            const containerEventSelection = $("#accordion"), containerMap = $("#container_map"), sideMenu = $("#side_menu");
+
+            renderMainCanvas(new Set(eventCodes.map(cameoElem => cameoElem.CAMEOEVENTCODE)));
 
             topEvents.forEach((cameoElem, index) => {
                 const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
@@ -50,19 +52,10 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
                     $("<input/>", {
                         "type": "checkbox",
                         "checked": true,
-                        "id": id
-                    }).change(
-                        function () {
-                            if ($(this).is(":checked") && selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE) < 0) {
-                                selectedEventCodes.push(cameoElem.CAMEOEVENTCODE);
-                            } else if (!$(this).is(":checked")) {
-                                const indexElem = selectedEventCodes.indexOf(cameoElem.CAMEOEVENTCODE);
-                                if (indexElem >= 0) {
-                                    selectedEventCodes.splice(indexElem, 1);
-                                }
-                            }
-                        }
-                    )
+                        "id": id,
+                        "class": "event_checkbox",
+                        "data-code": cameoElem.CAMEOEVENTCODE
+                    }).change(() => selectedEventCodesChanged = true)
                 ).append(
                     $("<div/>").addClass("state p-success").append(
                         $("<label>" + cameoElem.CAMEOEVENTCODE.substr(2) + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
@@ -79,16 +72,20 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
             });
 
             containerMap.hover(() => {
-                    sideEventsDrawer.stop();
-                    sideEventsDrawer.animate({
-                        right: "-" + sideEventsDrawer.width() + "px"
+                    sideMenu.stop();
+                    sideMenu.animate({
+                        right: "-" + sideMenu.width() + "px"
                     }, 200);
+                    if (selectedEventCodesChanged === true) {
+                        containerEventSelection.trigger("changed", [new Set(containerEventSelection.find('.event_checkbox:checkbox:checked').map((i, el) => $(el).attr("data-code")).get())]);
+                        selectedEventCodesChanged = false;
+                    }
                 }
             );
 
             sideMenu.hover(() => {
-                    sideEventsDrawer.stop();
-                    sideEventsDrawer.animate({
+                    sideMenu.stop();
+                    sideMenu.animate({
                         right: "0px"
                     }, 200);
                 }

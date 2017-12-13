@@ -1,5 +1,5 @@
-function getFilteredEvents(callback) {
-    d3.csv("november_lat_long_eventcode.csv", (data) => callback(data));
+function getFilteredEvents(callback, selectedEvents = lastSelectedEvents) {
+    d3.csv("november_lat_long_eventcode.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"]))));
 }
 
 // Constants:
@@ -19,7 +19,7 @@ const CIRCLE_RADIUS_FACTOR = 0.04;
 let firstLoad = true;
 
 // Here we declare the general DOM references
-let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map = undefined;
+let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map, containerEventSelection = undefined;
 let paneGeojson = undefined;
 
 let mainCanvas = L.canvas();
@@ -34,6 +34,7 @@ $(() => {
     sideEventsDrawer = $("#side_menu");
     sideCountryDetails = $("#side_country_details");
     countryCloseBtn = $("#country_close_btn");
+    containerEventSelection = $("#accordion");
 
     countryCloseBtn.click(closeCountryDetails);
 
@@ -44,16 +45,17 @@ $(() => {
         accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
     }).addTo(map);
 
-    renderMainCanvas();
-    map.on("zoomend", function(){
+    map.on("zoomend", function () {
         renderMainCanvas();
-    })
+    });
+    containerEventSelection.on("changed", (event, selectedCodes) => renderMainCanvas(selectedEvents = selectedCodes));
 });
 
 function drawData(dataToShow, groupingFunction, canvas, color) {
-    function meand3(group, attrib){
+    function meand3(group, attrib) {
         return d3.mean(group.map(d => parseFloat(d[attrib])))
     }
+
     const grouped = d3.nest()
         .key(d => [groupingFunction(d[LAT_COL]), groupingFunction(d[LONG_COL])])
         .rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group),
@@ -69,15 +71,15 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             renderer: canvas,
             stroke: false,
             fillColor: color,
-            radius: (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2**(CLUSTER_STEP * 0.8 * currentClusteringLevel),
+            radius: (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2 ** (CLUSTER_STEP * 0.8 * currentClusteringLevel),
         });
-        circle.on('mouseover', function(){
-            circle.setStyle({ fillOpacity: 0.5});
+        circle.on('mouseover', function () {
+            circle.setStyle({fillOpacity: 0.5});
         });
 
         // Un-highlight the marker on hover out
-        circle.on('mouseout', function(){
-            circle.setStyle({ fillOpacity: 0.2});
+        circle.on('mouseout', function () {
+            circle.setStyle({fillOpacity: 0.2});
         });
         circle.on("click", () => {
             const neededEvents = data.value[1]
@@ -90,7 +92,10 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                     .entries(country.values)
 
                 //We create an object where the key is the quad class and the value is the number of times it appears
-                const valuesQC = tempNest.reduce((prev, curr) => {prev[curr["key"]] = curr["value"]; return prev}, {});
+                const valuesQC = tempNest.reduce((prev, curr) => {
+                    prev[curr["key"]] = curr["value"];
+                    return prev
+                }, {});
                 const total = tempNest.reduce((total, pair) => total + pair["value"], 0);
                 let result = {
                     "country": country.key,
@@ -100,13 +105,14 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                     result[elem] = valuesQC["" + (i + 1)] || 0
                 })
                 return result;
-            })/*.map(country => ({
-                "country": country.key,
-                "Verbal Cooperation": country.values["1"] || 0,
-                "Material Cooperation": country.values["2"] || 0,
-                "Verbal Conflict": country.values["3"] || 0,
-                "Material Conflict": country.values["4"] || 0,
-            }))*/
+            })
+            /*.map(country => ({
+                            "country": country.key,
+                            "Verbal Cooperation": country.values["1"] || 0,
+                            "Material Cooperation": country.values["2"] || 0,
+                            "Verbal Conflict": country.values["3"] || 0,
+                            "Material Conflict": country.values["4"] || 0,
+                        }))*/
             let div = document.createElement("div");
             console.log(eventsNestedQuadClass)
 
@@ -154,31 +160,41 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 .selectAll("g")
                 .data(d3.stack().keys(keys)(eventsNestedQuadClass))
                 .enter().append("g")
-                  .attr("fill", function(d) { return z(d.key); })
+                .attr("fill", function (d) {
+                    return z(d.key);
+                })
                 .selectAll("rect")
-                .data(function(d) { return d; })
+                .data(function (d) {
+                    return d;
+                })
                 .enter().append("rect")
-                  .attr("x", function(d) { return x(d.data["country"]); })
-                  .attr("y", function(d) { return y(d[1]); })
-                  .attr("height", function(d) { return y(d[0]) - y(d[1]); })
-                  .attr("width", x.bandwidth());
+                .attr("x", function (d) {
+                    return x(d.data["country"]);
+                })
+                .attr("y", function (d) {
+                    return y(d[1]);
+                })
+                .attr("height", function (d) {
+                    return y(d[0]) - y(d[1]);
+                })
+                .attr("width", x.bandwidth());
 
             g.append("g")
-              .attr("class", "axis")
-              .attr("transform", "translate(0," + height + ")")
-              .call(d3.axisBottom(x));
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
 
             g.append("g")
-              .attr("class", "axis")
-              .call(d3.axisLeft(y).ticks(null, "s"))
-            .append("text")
-              .attr("x", 2)
-              .attr("y", y(y.ticks().pop()) + 0.5)
-              .attr("dy", "0.32em")
-              .attr("fill", "#000")
-              .attr("font-weight", "bold")
-              .attr("text-anchor", "start")
-              .text("Number of events");
+                .attr("class", "axis")
+                .call(d3.axisLeft(y).ticks(null, "s"))
+                .append("text")
+                .attr("x", 2)
+                .attr("y", y(y.ticks().pop()) + 0.5)
+                .attr("dy", "0.32em")
+                .attr("fill", "#000")
+                .attr("font-weight", "bold")
+                .attr("text-anchor", "start")
+                .text("Number of events");
 
             let legend = g.append("g")
                 .attr("font-family", "sans-serif")
@@ -186,8 +202,10 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 .attr("text-anchor", "end")
                 .selectAll("g")
                 .data(keys.slice().reverse())
-                    .enter().append("g")
-                    .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+                .enter().append("g")
+                .attr("transform", function (d, i) {
+                    return "translate(0," + i * 20 + ")";
+                });
 
             legend.append("rect")
                 .attr("x", width - 19)
@@ -199,7 +217,9 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 .attr("x", width - 24)
                 .attr("y", 9.5)
                 .attr("dy", "0.32em")
-                .text(function(d) { return d; });
+                .text(function (d) {
+                    return d;
+                });
             /*
             let g = svg.append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -243,13 +263,16 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 */
             circle.bindPopup(div);
             circle.openPopup();
-        })
+        });
         circle.addTo(map);
         //
     })
 }
 
-function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
+let lastSelectedEvents;
+
+function renderMainCanvas(selectedEvents = lastSelectedEvents, doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
+
     function getClusteringLevel(zoomLevel) {
         return Math.floor(zoomLevel / CLUSTER_STEP)
     }
@@ -258,7 +281,8 @@ function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScr
     const newClusteringLevel = getClusteringLevel(currentZoom);
     console.log(currentClusteringLevel)
     console.log(newClusteringLevel)
-    if (newClusteringLevel !== currentClusteringLevel) {
+    if (newClusteringLevel !== currentClusteringLevel || selectedEvents !== lastSelectedEvents) {
+        lastSelectedEvents = selectedEvents;
         console.log("Changing")
         if (doBefore !== undefined) {
             doBefore();
@@ -267,10 +291,10 @@ function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScr
         mainCanvas.removeFrom(map);
         mainCanvas = L.canvas();
         let groupingFunction = undefined;
-        if(currentClusteringLevel >= CLUSTER_DEGREE){
+        if (currentClusteringLevel >= CLUSTER_DEGREE) {
             groupingFunction = coord => coord;
         } else {
-            groupingFunction = coord => round(coord, 1 / (2**currentClusteringLevel));
+            groupingFunction = coord => round(coord, 1 / (2 ** currentClusteringLevel));
         }
         getFilteredEvents((filteredEvents) => {
                 drawData(filteredEvents, groupingFunction, mainCanvas, "red");
@@ -288,7 +312,7 @@ function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScr
                         }, 200), 1300);
                     }
                 }
-            }
+            }, selectedEvents
         );
     }
 }
@@ -368,14 +392,14 @@ $.get(geoJSONData, function (data) {
 
 });
 
-$(document).keydown(function(event){
-    if(event.key === "Control"){
+$(document).keydown(function (event) {
+    if (event.key === "Control") {
         paneGeojson.style.zIndex = 390;
     }
 })
 
-$(document).keyup(function(event){
-    if(event.key === "Control"){
+$(document).keyup(function (event) {
+    if (event.key === "Control") {
         paneGeojson.style.zIndex = 400;
     }
 })

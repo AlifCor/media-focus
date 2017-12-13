@@ -46,4 +46,28 @@ The details will include the sankey news flow diagram (two diagrams: events-base
 ## Week 12
 We are still working on the visualization. Ali is working on the accordion side menu for filtering event types and he's trying to make it as beautiful as possible, Maxime is working on processing the data in python so that we have data which is as clean as possible and Ahmed is working on the visualization, drawing the circles on the map with Leaflet and d3 and showing the sankey diagram information.
 
-Another idea came to our mind: we can give the user the possibility to hover the mouse on the sankey links so that the events corresponding to the source and target countries are shown in a different color on the map (blue).
+### The hover idea:
+We thought of a new way to add interactivity to our sankey diagram. Maybe we could show additional information when the viewer hovers a link: when a link from a country to the selected country is hovered, we can color the link in a chosen color (let's say blue for the example) and then color all the corresponding events in the same blue. We can also add blue lines on the map which go from the source countries to the target events (for that we need the central geocoordinates for each country. [This](https://developers.google.com/public-data/docs/canonical/countries_csv) might be a good catch.)
+
+
+### The flow problem
+We realized that one thing was not so good with our sankey diagram. Actually, we don't event need a sankey diagram for this because we can represent such information with simple bar charts ! We simply need two bar charts: one for the source countries and one for the target countries (same for the event types). And also, the notion of flow does not really make sense in this context: the number of news which "enters" Switzerland is not the same as the number which "goes out". So we came up with this solution where, instead of putting the target countries on the right, we put the types of the source events.
+![alt text](images/flow_equal_sol.jpg)
+This way, the flow makes sense: the number of events (the width of the flow) is the same on both sides. However, this one has two disadvantages:
+* same as before: we can represent the information with bar charts. So we are just adding chart junk here.
+* it is not clear at first sight.
+
+We thought about dropping the idea of the sankey diagram but then, we came up with something much better:
+![alt text](images/sankey_final_sol.jpg)
+
+This diagram allows us to keep the sankey (somehow we absolutely wanted to keep the sankey diagram to show this "event flow" information) and the disadvantages we mentioned before disappear: it is more difficult to represent this with a bar chart (we could still represent it with a 2d histograms but it is visually more difficult to read than the sankey diagram) and it is much clearer.
+
+### circles: the nonprecision problem
+Now we have our visualization with our red circles on the map:
+![alt text](images/image_red_circles.png)
+So we can see the red circles which show the distribution of events on the map. We noticed one problem: look at the big red circle at the center. It is not really directed at a special big city (like the other big circles we can typically see on important cities like New York, Los Angeles or Washington) but it is one of the biggest circles in the US. Actually, the problem is the data: we have a lot of news where the GDELT team didn't have enough resources to compute the exact location of the event so they simply put it at the centroid of the United States. This problem is also visible for other countries (or states also). So what do we do about this ? 
+
+* We can simply drop those events but this is rather complicated: we have to find the centroid for each country (or states) and to make sure that the geolocation of the event doesn't coincide with it. However, it would probably not be the exact same location (except if we find out how GDELT generated it) so we would probably have to include the notion of "proximity". If the event is near the centroid of the country then we drop eat. And here again new problems show up: what if an important city is located at or near the centroid of the country/state. What does it mean "to be near the centroid" ? How do we handle that for big and small countries (even tiny ones like Liechtenstein).
+* Or we can simply keep them. It is true that this information somehow disturbs the viewer but it is also a visualization of the GDELT dataset so we can keep it. Anyway, if the GDELT team finds more resources and is capable of geolocating these events with more precision in the future, our visualization will be cleaner !
+
+So obviously we chose to keep all the events.

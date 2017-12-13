@@ -1,6 +1,7 @@
-function getFilteredEvents(callback) {
-    d3.csv("data_cleaned.csv", (data) => callback(data));
+function getFilteredEvents(callback, selectedEvents = lastSelectedEvents) {
+    d3.csv("data_cleaned.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"]))));
 }
+
 function getMapping(callback) {
     d3.csv("mapping_code_name.csv", (data) => callback(data));
 }
@@ -22,7 +23,7 @@ const CIRCLE_RADIUS_FACTOR = 0.04;
 let firstLoad = true;
 
 // Here we declare the general DOM references
-let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map = undefined;
+let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map, containerEventSelection = undefined;
 let paneGeojson = undefined;
 
 let mainCanvas = L.canvas();
@@ -37,6 +38,7 @@ $(() => {
     sideEventsDrawer = $("#side_menu");
     sideCountryDetails = $("#side_country_details");
     countryCloseBtn = $("#country_close_btn");
+    containerEventSelection = $("#accordion");
 
     countryCloseBtn.click(closeCountryDetails);
 
@@ -47,16 +49,17 @@ $(() => {
         accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
     }).addTo(map);
 
-    renderMainCanvas();
-    map.on("zoomend", function(){
+    map.on("zoomend", function () {
         renderMainCanvas();
-    })
+    });
+    containerEventSelection.on("changed", (event, selectedCodes) => renderMainCanvas(selectedEvents = selectedCodes));
 });
 
 function drawData(dataToShow, groupingFunction, canvas, color) {
-    function meand3(group, attrib){
+    function meand3(group, attrib) {
         return d3.mean(group.map(d => parseFloat(d[attrib])))
     }
+
     const grouped = d3.nest()
         .key(d => [groupingFunction(d[LAT_COL]), groupingFunction(d[LONG_COL])])
         .rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group),
@@ -72,15 +75,15 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             renderer: canvas,
             stroke: false,
             fillColor: color,
-            radius: (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2**(CLUSTER_STEP * 0.8 * currentClusteringLevel),
+            radius: (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2 ** (CLUSTER_STEP * 0.8 * currentClusteringLevel),
         });
-        circle.on('mouseover', function(){
-            circle.setStyle({ fillOpacity: 0.5});
+        circle.on('mouseover', function () {
+            circle.setStyle({fillOpacity: 0.5});
         });
 
         // Un-highlight the marker on hover out
-        circle.on('mouseout', function(){
-            circle.setStyle({ fillOpacity: 0.2});
+        circle.on('mouseout', function () {
+            circle.setStyle({fillOpacity: 0.2});
         });
         circle.on("click", () => {
             const neededEvents = data.value[1]
@@ -93,7 +96,10 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                     .entries(country.values)
 
                 //We create an object where the key is the quad class and the value is the number of times it appears
-                const valuesQC = tempNest.reduce((prev, curr) => {prev[curr["key"]] = curr["value"]; return prev}, {});
+                const valuesQC = tempNest.reduce((prev, curr) => {
+                    prev[curr["key"]] = curr["value"];
+                    return prev
+                }, {});
                 const total = tempNest.reduce((total, pair) => total + pair["value"], 0);
                 let result = {
                     "country": country.key,
@@ -191,12 +197,15 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
 
             circle.bindPopup(div);
             circle.openPopup();
-        })
+        });
         circle.addTo(map);
     })
 }
 
-function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
+let lastSelectedEvents;
+
+function renderMainCanvas(selectedEvents = lastSelectedEvents, doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
+
     function getClusteringLevel(zoomLevel) {
         return Math.floor(zoomLevel / CLUSTER_STEP)
     }
@@ -211,10 +220,10 @@ function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScr
         mainCanvas.removeFrom(map);
         mainCanvas = L.canvas();
         let groupingFunction = undefined;
-        if(currentClusteringLevel >= CLUSTER_DEGREE){
+        if (currentClusteringLevel >= CLUSTER_DEGREE) {
             groupingFunction = coord => coord;
         } else {
-            groupingFunction = coord => round(coord, 1 / (2**currentClusteringLevel));
+            groupingFunction = coord => round(coord, 1 / (2 ** currentClusteringLevel));
         }
         getFilteredEvents((filteredEvents) => {
                 drawData(filteredEvents, groupingFunction, mainCanvas, "red");
@@ -232,7 +241,7 @@ function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScr
                         }, 200), 1300);
                     }
                 }
-            }
+            }, selectedEvents
         );
     }
 }
@@ -300,14 +309,14 @@ $.get(geoJSONData, function (data) {
 
 });
 
-$(document).keydown(function(event){
-    if(event.key === "Control"){
+$(document).keydown(function (event) {
+    if (event.key === "Control") {
         paneGeojson.style.zIndex = 390;
     }
 })
 
-$(document).keyup(function(event){
-    if(event.key === "Control"){
+$(document).keyup(function (event) {
+    if (event.key === "Control") {
         paneGeojson.style.zIndex = 400;
     }
 })

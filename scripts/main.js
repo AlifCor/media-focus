@@ -1,6 +1,17 @@
-function getFilteredEvents(callback, selectedEvents = lastSelectedEvents) {
-    d3.csv("data_cleaned.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"]))));
-}
+const getFilteredEvents = (function () {
+    let selectedEvents;
+    $(() => $("#accordion").on("changed", (event, selectedCodes) => selectedEvents = selectedCodes));
+
+    return function (callback) {
+        if (selectedEvents !== undefined) {
+            d3.csv("data_cleaned.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"]))));
+        }
+        else {
+            //The user never changed the selection inside the drawer => return all data
+            d3.csv("data_cleaned.csv", data => callback(data));
+        }
+    }
+}());
 
 function getMapping(callback) {
     d3.csv("mapping_code_name.csv", (data) => callback(data));
@@ -49,10 +60,8 @@ $(() => {
         accessToken: 'pk.eyJ1IjoiYWhtZWRrdWxvdmljIiwiYSI6ImNqYTR2Mmp1dTlsbmoycXB5aXkyOXdtMjkifQ.sU3WNVes2qNhTFH-0nAzYA'
     }).addTo(map);
 
-    map.on("zoomend", function () {
-        renderMainCanvas();
-    });
-    containerEventSelection.on("changed", (event, selectedCodes) => renderMainCanvas(selectedEvents = selectedCodes));
+    map.on("zoomend", () => renderMainCanvas());
+    containerEventSelection.on("changed", () => renderMainCanvas());
 });
 
 function drawData(dataToShow, groupingFunction, canvas, color) {
@@ -148,36 +157,36 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
 
             layer.selectAll("rect")
                 .data(d => d)
-            .enter().append("rect")
+                .enter().append("rect")
                 .attr("y", d => yScale(d.data["country"]))
                 .attr("x", d => xScale(d[0]))
                 .attr("height", yScale.bandwidth())
                 .attr("width", d => xScale(d[1]) - xScale(d[0]))
                 .append("title")
-                    .text(function(d){
-                        console.log(neededEvents)
-                        return d.data["country"]
-                    })
+                .text(function (d) {
+                    console.log(neededEvents)
+                    return d.data["country"]
+                })
 
             g.append("g")
-    			.attr("class", "axis axis--x")
-    			.attr("transform", "translate(0," + (height+5) + ")")
-    			.call(xAxis);
+                .attr("class", "axis axis--x")
+                .attr("transform", "translate(0," + (height + 5) + ")")
+                .call(xAxis);
 
-    		g.append("g")
-    			.attr("class", "axis axis--y")
-    			.attr("transform", "translate(0,0)")
-    			.call(yAxis);
+            g.append("g")
+                .attr("class", "axis axis--y")
+                .attr("transform", "translate(0,0)")
+                .call(yAxis);
 
             let legend = svg.append("g")
                 .attr("font-family", "sans-serif")
                 .attr("font-size", 10)
-            .selectAll("g")
+                .selectAll("g")
                 .data(QUAD_CLASS_KEYS)
-            .enter().append("g")
-                .attr("transform", function(d, i) {
-                    return "translate("+ (Math.floor(i / 2) * widthBarChart / 2) + ", " +
-                                        (i % 2 * 30) + ")";
+                .enter().append("g")
+                .attr("transform", function (d, i) {
+                    return "translate(" + (Math.floor(i / 2) * widthBarChart / 2) + ", " +
+                        (i % 2 * 30) + ")";
                 })
 
             console.log("height: " + legend.attr("height"))
@@ -202,9 +211,7 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
     })
 }
 
-let lastSelectedEvents;
-
-function renderMainCanvas(selectedEvents = lastSelectedEvents, doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
+function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
 
     function getClusteringLevel(zoomLevel) {
         return Math.floor(zoomLevel / CLUSTER_STEP)
@@ -241,7 +248,7 @@ function renderMainCanvas(selectedEvents = lastSelectedEvents, doBefore = startL
                         }, 200), 1300);
                     }
                 }
-            }, selectedEvents
+            }
         );
     }
 }
@@ -283,7 +290,7 @@ let customStyle = {
 
 function clickFeature(e, properties) {
     let layer = e.target;
-    console.log(properties.name)
+    console.log(properties.name);
     showCountryDetails(properties["su_a3"]);
 
 }

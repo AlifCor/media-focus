@@ -2,6 +2,8 @@ function prepareAccordion() {
     let animTime = 300,
         clickPolice = false;
 
+    const accContent = $('.acc-content');
+
     $(document).on('touchstart click', '.acc-btn', function () {
         if (!clickPolice) {
             clickPolice = true;
@@ -12,8 +14,8 @@ function prepareAccordion() {
             $('.acc-btn h1').removeClass('selected');
             $(this).find('h1').addClass('selected');
 
-            $('.acc-content').stop().animate({height: 0}, animTime);
-            $('.acc-content').eq(currIndex).stop().animate({height: targetHeight}, animTime);
+            accContent.stop().animate({height: 0}, animTime);
+            accContent.eq(currIndex).stop().animate({height: targetHeight}, animTime);
 
             setTimeout(function () {
                 clickPolice = false;
@@ -34,7 +36,7 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
         $(() => {
             const containerEventSelection = $("#accordion"), containerMap = $("#container_map"), sideMenu = $("#side_menu");
 
-            renderMainCanvas(new Set(eventCodes.map(cameoElem => cameoElem.CAMEOEVENTCODE)));
+            renderMainCanvas();
 
             topEvents.forEach((cameoElem, index) => {
                 const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);

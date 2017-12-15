@@ -95,6 +95,8 @@ function buildAccordion() {
             )
         ).appendTo(container);
     });
+
+    prepareAccordion();
 }
 
 let containerMap, sideMenu;
@@ -110,8 +112,6 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
             sideMenu = $("#side_menu");
 
             buildAccordion();
-
-            prepareAccordion();
 
             containerMap.hover(() => {
                     sideMenu.stop();

@@ -9,6 +9,7 @@
     <meta name="author" content="Delisle, Kulovic, Hosseiny">
 
     <link rel="stylesheet" type="text/css" href="styles/style.css">
+    <link rel="stylesheet" type="text/css" href="styles/dropdown.css">
     <link rel="stylesheet" type="text/css" href="styles/accordion.css">
     <link rel="stylesheet" type="text/css" href="styles/pretty-checkbox.min.css">
 
@@ -23,6 +24,7 @@
     <script src="scripts/PruneCluster.js"></script>
 
     <script src="scripts/utils.js"></script>
+    <script src="scripts/dropdown.js"></script>
     <script src="scripts/drawer.js"></script>
     <script src="scripts/sankey.js"></script>
     <script src="scripts/main.js"></script>
@@ -63,7 +65,15 @@ Loading screen, inspired by the following tutorials:
         <a id="pull"></a>
         <div id="side_events">
             <!-- Inspired by https://codepen.io/agrayson/pen/aLpKB -->
-            <div id="accordion" class="acc-container"></div>
+            <div id="accordion" class="acc-container">
+                <select id="filter-level">
+                    <option value="hide">Filtering depth</option>
+                    <option value="2" selected="selected">Depth 1</option>
+                    <option value="3">Depth 2</option>
+                    <option value="4">Depth 3</option>
+                </select>
+            </div>
+            <div id="acc-elements"></div>
         </div>
     </div>
 </div>

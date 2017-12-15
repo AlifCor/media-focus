@@ -23,10 +23,15 @@ html, body {
     cursor:pointer;
     background:#34495E;
     border-bottom:1px solid #2C3E50;
+    transition: all 0.2s ease-in;
+}
+
+.acc-btn:hover {
+    background-color: #2d3f51;
 }
 
 .acc-content {
-    height:0px;
+    height:0;
     width:100%;
     margin:0 auto;
     overflow:hidden;
@@ -58,7 +63,7 @@ p, label {
 
 
 #side_menu {
-    background: #2C3E50;
+    background: #1f2c38;
     z-index: 1;
     height: 100%;
     position: absolute;
@@ -68,7 +73,7 @@ p, label {
 }
 
 #side_events {
-    background: #2C3E50;
+    background: #1f2c38;
     position: absolute;
     width: 100%;
     height: 100%;
@@ -81,7 +86,7 @@ p, label {
     margin: 0;
 }
 */
-#accordion .pretty {
+#acc-elements .pretty {
     display: block;
     margin-bottom: 15px;
 }
@@ -90,7 +95,7 @@ p, label {
     position: absolute;
     top: 46%;
     left: -30px;
-    background: #2C3E50;
+    background: #1f2c38;
     width: 30px;
     height: 8%;
     border-radius: 12px 0 0 12px;

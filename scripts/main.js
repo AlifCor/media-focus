@@ -34,7 +34,7 @@ const CIRCLE_RADIUS_FACTOR = 0.04;
 let firstLoad = true;
 
 // Here we declare the general DOM references
-let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map, containerEventSelection = undefined;
+let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map, containerEventSelection;
 let paneGeojson = undefined;
 
 let mainCanvas = L.canvas();
@@ -62,6 +62,7 @@ $(() => {
 
     map.on("zoomend", () => renderMainCanvas());
     containerEventSelection.on("changed", () => renderMainCanvas());
+    renderMainCanvas();
 });
 
 function drawData(dataToShow, groupingFunction, canvas, color) {
@@ -166,7 +167,7 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 .text(function (d) {
                     console.log(neededEvents)
                     return d.data["country"]
-                })
+                });
 
             g.append("g")
                 .attr("class", "axis axis--x")
@@ -212,7 +213,6 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
 }
 
 function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
-
     function getClusteringLevel(zoomLevel) {
         return Math.floor(zoomLevel / CLUSTER_STEP)
     }

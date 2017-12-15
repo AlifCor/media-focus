@@ -25,9 +25,6 @@ function prepareAccordion() {
     });
 }
 
-let selectedEventCodesChanged = false;
-const filteringLevel = 2;
-
 function categoryForEvent(cameoEventCode) {
     const size = cameoEventCode.length;
     if (size > 2) {
@@ -50,50 +47,71 @@ function categoryForEvent(cameoEventCode) {
     }
 }
 
+let selectedEventCodesChanged = false, filteringLevel = 2;
+
+$(() =>
+    $("#filter-level").change(() => {
+            const newFilterlingLevel = $("#filter-level").val();
+            if (newFilterlingLevel !== filteringLevel) {
+                filteringLevel = newFilterlingLevel;
+                buildAccordion();
+            }
+        }
+    )
+);
+
+function buildAccordion() {
+    const containerEventSelection = $("#acc-elements");
+    containerEventSelection.html("");
+    const topEvents = cameoData.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel - 1);
+    const eventCodes = cameoData.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel);
+
+    topEvents.forEach((cameoElem, index) => {
+        const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
+        $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).appendTo(accBtn);
+
+        const accContent = $("<div/>").addClass("acc-content").appendTo(containerEventSelection);
+        $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
+    });
+
+    eventCodes.forEach((cameoElem, index) => {
+        const id = "box-" + cameoElem.CAMEOEVENTCODE;
+        const container = $(`#events-${categoryForEvent(cameoElem.CAMEOEVENTCODE)}`);
+
+        $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
+            $("<input/>", {
+                "type": "checkbox",
+                "checked": true,
+                "id": id,
+                "class": "event_checkbox",
+                "data-code": cameoElem.CAMEOEVENTCODE
+            }).change(() => selectedEventCodesChanged = true)
+        ).append(
+            $("<div/>").addClass("state p-success").append(
+                $("<label>" + cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
+                    "for": id,
+                    "class": "label_event_checkbox"
+                })
+            )
+        ).appendTo(container);
+    });
+}
+
+let containerMap, sideMenu;
+let cameoData;
+
 d3.tsv("CAMEO.eventcodes.txt", function (data) {
-        const topEvents = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel - 1);
-        const eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel);
+        cameoData = data;
 
         //On document ready, append to DOM
         $(() => {
-            const containerEventSelection = $("#accordion"), containerMap = $("#container_map"), sideMenu = $("#side_menu");
+            const containerEventSelection = $("#accordion");
+            containerMap = $("#container_map");
+            sideMenu = $("#side_menu");
 
-            renderMainCanvas();
+            buildAccordion();
 
-            topEvents.forEach((cameoElem, index) => {
-                const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
-                $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION))/*.addClass(index === 0 ? "selected" : null)*/.appendTo(accBtn);
-
-                const accContent = $("<div/>").addClass("acc-content"/* + (index === 0 ? " open" : "")*/).appendTo(containerEventSelection);
-                $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
-            });
-
-            eventCodes.forEach((cameoElem, index) => {
-                const id = "box-" + cameoElem.CAMEOEVENTCODE;
-                const container = $(`#events-${categoryForEvent(cameoElem.CAMEOEVENTCODE)}`);
-
-                $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
-                    $("<input/>", {
-                        "type": "checkbox",
-                        "checked": true,
-                        "id": id,
-                        "class": "event_checkbox",
-                        "data-code": cameoElem.CAMEOEVENTCODE
-                    }).change(() => selectedEventCodesChanged = true)
-                ).append(
-                    $("<div/>").addClass("state p-success").append(
-                        $("<label>" + cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
-                            "for": id,
-                            "class": "label_event_checkbox"
-                        })
-                    )
-                ).appendTo(container);
-
-                if (index === eventCodes.length - 1) {
-                    //We appended everything, add the behaviour of the accordion
-                    prepareAccordion();
-                }
-            });
+            prepareAccordion();
 
             containerMap.hover(() => {
                     sideMenu.stop();

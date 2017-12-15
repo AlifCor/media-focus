@@ -55,3 +55,44 @@ p, label {
 .selected {
     color:#1ABC9C;
 }
+
+
+#side_menu {
+    background: #2C3E50;
+    z-index: 1;
+    height: 100%;
+    position: absolute;
+    width: 350px;
+    top: 0;
+    right: -350px;
+}
+
+#side_events {
+    background: #2C3E50;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+}
+
+/*
+#accordion fieldset, #accordion input, #accordion div {
+    padding: 0;
+    margin: 0;
+}
+*/
+#accordion .pretty {
+    display: block;
+    margin-bottom: 15px;
+}
+
+#pull {
+    position: absolute;
+    top: 46%;
+    left: -30px;
+    background: #2C3E50;
+    width: 30px;
+    height: 8%;
+    border-radius: 12px 0 0 12px;
+    cursor: pointer;
+}

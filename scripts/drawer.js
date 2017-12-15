@@ -26,11 +26,33 @@ function prepareAccordion() {
 }
 
 let selectedEventCodesChanged = false;
+const filteringLevel = 2;
+
+function categoryForEvent(cameoEventCode) {
+    const size = cameoEventCode.length;
+    if (size > 2) {
+        return cameoEventCode.substr(0, size - 1);
+    }
+    else if (size === 2) {
+        const intCode = parseInt(cameoEventCode);
+        if (intCode <= 5) {
+            return "1";
+        }
+        else if (intCode <= 9) {
+            return "2";
+        }
+        else if (intCode <= 14) {
+            return "3";
+        }
+        else {
+            return "4";
+        }
+    }
+}
 
 d3.tsv("CAMEO.eventcodes.txt", function (data) {
-        const eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 3);
-
-        const topEvents = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === 2);
+        const topEvents = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel - 1);
+        const eventCodes = data.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel);
 
         //On document ready, append to DOM
         $(() => {
@@ -40,15 +62,15 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
 
             topEvents.forEach((cameoElem, index) => {
                 const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
-                $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).addClass(index === 0 ? "selected" : null).appendTo(accBtn);
+                $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION))/*.addClass(index === 0 ? "selected" : null)*/.appendTo(accBtn);
 
-                const accContent = $("<div/>").addClass("acc-content" + (index === 0 ? " open" : "")).appendTo(containerEventSelection);
+                const accContent = $("<div/>").addClass("acc-content"/* + (index === 0 ? " open" : "")*/).appendTo(containerEventSelection);
                 $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
             });
 
             eventCodes.forEach((cameoElem, index) => {
                 const id = "box-" + cameoElem.CAMEOEVENTCODE;
-                const container = $(`#events-${cameoElem.CAMEOEVENTCODE.substr(0, 2)}`);
+                const container = $(`#events-${categoryForEvent(cameoElem.CAMEOEVENTCODE)}`);
 
                 $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
                     $("<input/>", {
@@ -60,7 +82,7 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
                     }).change(() => selectedEventCodesChanged = true)
                 ).append(
                     $("<div/>").addClass("state p-success").append(
-                        $("<label>" + cameoElem.CAMEOEVENTCODE.substr(2) + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
+                        $("<label>" + cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
                             "for": id,
                             "class": "label_event_checkbox"
                         })

@@ -172,33 +172,6 @@
     align-items: center;
 }
 
-#side_menu {
-    background: #2C3E50;
-    z-index: 1;
-    height: 100%;
-    position: absolute;
-    width: 350px;
-    top: 0;
-    right: -350px;
-}
-
-#side_events {
-    background: #2C3E50;
-    position: absolute;
-    height: 100%;
-    overflow-y: scroll;
-}
-
-/*
-#accordion fieldset, #accordion input, #accordion div {
-    padding: 0;
-    margin: 0;
-}
-*/
-#accordion .pretty {
-    display: block;
-    margin-bottom: 15px;
-}
 
 #button_event_drawer {
     position: absolute;
@@ -286,15 +259,4 @@ body {
     width: 100%;
     height: 100%;
     margin: 0;
-}
-
-#pull {
-    position: absolute;
-    top: 46%;
-    left: -30px;
-    background: #2C3E50;
-    width: 30px;
-    height: 8%;
-    border-radius: 12px 0 0 12px;
-    cursor: pointer;
 }

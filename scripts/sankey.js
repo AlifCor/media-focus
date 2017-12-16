@@ -35,126 +35,130 @@ function updateSankey() {
 
         let selectionSankeyContainer = d3.select(idContainer);
         selectionSankeyContainer.selectAll("svg > *").remove();
-        let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
 
-        let width = bboxSankeyContainer.width,
-            height = bboxSankeyContainer.height;
+        if(currentSankeyGraph.nodes.length > 1){
+            let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
 
-        selectionSankeyContainer.attr("width", width)
-            .attr("height", height);
+            let width = bboxSankeyContainer.width,
+                height = bboxSankeyContainer.height;
 
-        let formatNumber = d3.format(",.0f"),
-            format = function (d) {
-                return formatNumber(d) + " News";
-            };
+            selectionSankeyContainer.attr("width", width)
+                .attr("height", height);
 
-        let sankey = d3.sankey()
-            .nodeWidth(15)
-            .nodePadding(10)
-            .extent([[1, 1], [width - 1, height - 6]]);
+            let formatNumber = d3.format(",.0f"),
+                format = function (d) {
+                    return formatNumber(d) + " News";
+                };
 
-        function handleMouseOverLink(d) {
-            d3.select(this).attr(
-                "stroke", "blue",
-            );
-            renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
-                row[EVENT_COUNTRY_COL] === d.target.name);
+            let sankey = d3.sankey()
+                .nodeWidth(15)
+                .nodePadding(10)
+                .extent([[1, 1], [width - 1, height - 6]]);
+
+            function handleMouseOverLink(d) {
+                d3.select(this).attr(
+                    "stroke", "blue",
+                );
+                renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
+                    row[EVENT_COUNTRY_COL] === d.target.name);
+            }
+
+            function handleMouseOutLink(d) {
+                d3.select(this).attr(
+                    "stroke", "#000",
+                );
+                overCanvas.removeFrom(map);
+            }
+
+            function handleClickLink(d) {
+                let country = d.target.name;
+                map.fitBounds(boundingCountries[country]);
+            }
+
+            let link = selectionSankeyContainer.append("g")
+                .attr("class", "links")
+                .attr("fill", "none")
+                .attr("stroke", "#000")
+                .attr("stroke-opacity", 0.2)
+                .attr("border", "2px solid red")
+                .selectAll("path")
+
+            let node = selectionSankeyContainer.append("g")
+                .attr("class", "nodes")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 10)
+                .selectAll("g");
+
+            sankey(currentSankeyGraph);
+
+            link = link
+                .data(currentSankeyGraph.links)
+                .enter().append("path")
+                .attr("d", d3.sankeyLinkHorizontal())
+                .attr("stroke-width", function (d) {
+                    return Math.max(1, d.width);
+                })
+                .on("mouseover", handleMouseOverLink)
+                .on("mouseout", handleMouseOutLink)
+                .on("click", handleClickLink);
+
+            link.append("title")
+                .text(function (d) {
+                    return d.source.name + " → " + d.target.name + "\n" + format(d.value);
+                });
+
+            node = node
+                // We split because of the _target or _source suffixes
+                .data(currentSankeyGraph.nodes.map(elem => {
+                    elem["name"] = elem["name"].split("_")[0];
+                    return elem;
+                }))
+                .enter().append("g");
+
+            node.append("rect")
+                .attr("x", function (d) {
+                    return d.x0;
+                })
+                .attr("y", function (d) {
+                    return d.y0;
+                })
+                .attr("height", function (d) {
+                    return d.y1 - d.y0;
+                })
+                .attr("width", function (d) {
+                    return d.x1 - d.x0;
+                })
+
+                .style("stroke", "#000")
+                .style("fill", function(d) {
+    		        return color(d.name); })
+
+            node.append("text")
+                .attr("x", function (d) {
+                    return d.x0 - 6;
+                })
+                .attr("y", function (d) {
+                    return (d.y1 + d.y0) / 2;
+                })
+                .attr("dy", "0.35em")
+                .attr("text-anchor", "end")
+                .text(function (d) {
+                    return d.name;
+                })
+                .filter(function (d) {
+                    return d.x0 < width / 2;
+                })
+                .attr("x", function (d) {
+                    return d.x1 + 6;
+                })
+                .attr("text-anchor", "start");
+
+            node.append("title")
+                .text(function (d) {
+                    return d.name + "\n" + format(d.value);
+                });
         }
 
-        function handleMouseOutLink(d) {
-            d3.select(this).attr(
-                "stroke", "#ebf0f4",
-            );
-            overCanvas.removeFrom(map);
-        }
-
-        function handleClickLink(d) {
-            let country = d.target.name;
-            map.fitBounds(boundingCountries[country]);
-        }
-
-        let link = selectionSankeyContainer.append("g")
-            .attr("class", "links")
-            .attr("fill", "none")
-            .attr("stroke", "#ebf0f4")
-            .attr("stroke-opacity", 0.2)
-            .attr("border", "2px solid red")
-            .selectAll("path");
-
-        let node = selectionSankeyContainer.append("g")
-            .attr("class", "nodes")
-            .attr("font-family", "sans-serif")
-            .attr("font-size", 10)
-            .selectAll("g");
-
-        sankey(currentSankeyGraph);
-
-        link = link
-            .data(currentSankeyGraph.links)
-            .enter().append("path")
-            .attr("d", d3.sankeyLinkHorizontal())
-            .attr("stroke-width", function (d) {
-                return Math.max(1, d.width);
-            })
-            .on("mouseover", handleMouseOverLink)
-            .on("mouseout", handleMouseOutLink)
-            .on("click", handleClickLink);
-
-        link.append("title")
-            .text(function (d) {
-                return d.source.name + " → " + d.target.name + "\n" + format(d.value);
-            });
-
-        node = node
-        // We split because of the _target or _source suffixes
-            .data(currentSankeyGraph.nodes.map(elem => {
-                elem["name"] = elem["name"].split("_")[0];
-                return elem;
-            }))
-            .enter().append("g");
-
-        node.append("rect")
-            .attr("x", function (d) {
-                return d.x0;
-            })
-            .attr("y", function (d) {
-                return d.y0;
-            })
-            .attr("height", function (d) {
-                return d.y1 - d.y0;
-            })
-            .attr("width", function (d) {
-                return d.x1 - d.x0;
-            })
-            .style("stroke", "#ebf0f4")
-            .style("fill", function (d) {
-                return color(d.name);
-            });
-
-        node.append("text")
-            .attr("x", function (d) {
-                return d.x0 - 6;
-            })
-            .attr("y", function (d) {
-                return (d.y1 + d.y0) / 2;
-            })
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "end")
-            .text(function (d) {
-                return d.name;
-            })
-            .filter(function (d) {
-                return d.x0 < width / 2;
-            })
-            .attr("x", function (d) {
-                return d.x1 + 6;
-            })
-            .attr("text-anchor", "start");
-
-        node.append("title")
-            .text(function (d) {
-                return d.name + "\n" + format(d.value);
-            });
     }
 
     updateSankeyDiagram("#container_sankey_countries", "target");
@@ -286,6 +290,10 @@ function renderSankey() {
 
         currentSankeyTargetGraph = getSankeyGraph("target");
         currentSankeySourceGraph = getSankeyGraph("source");
+
+        console.log(currentSankeyTargetGraph)
+        console.log(currentSankeySourceGraph)
+
         updateSankey(currentSankeyTargetGraph);
         updateSankey(currentSankeySourceGraph);
 

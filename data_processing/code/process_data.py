@@ -51,7 +51,22 @@ def compute_processed_data(start, end=None, name='data_cleaned'):
     
     data_kept.loc[data_kept['source_country_name'] == 'Unknown', 'source_country_name'] = data_kept.loc[data_kept['source_country_name'] == 'Unknown', 'Sources'].apply(lambda x: get_tld(x)).apply(lambda x: dic[x] if x in dic else 'Unknown')
 
-    data_kept = data_kept[['IsRootEvent', 'QuadClass', 'EventCode', 'EventRootCode', 'ActionGeo_Lat', 'ActionGeo_Long', 'country_name', 'source_country_name']]
+
+    name_to_alpha = {alpha_to_name[x].strip(): x for x in alpha_to_name}
+    data_kept.loc[data_kept['source_country_name'] == 'South Korea', 'source_country_name'] = 'Korea, South'
+    data_kept.loc[data_kept['source_country_name'] == 'North Korea', 'source_country_name'] = 'Korea, North'
+    data_kept.loc[data_kept['source_country_name'] == 'Bahamas', 'source_country_name'] = 'Bahamas, The'
+    data_kept.loc[data_kept['source_country_name'] == 'Czech Republic', 'source_country_name'] = 'Czechia'
+    data_kept.loc[data_kept['source_country_name'] == 'Western Samoa', 'source_country_name'] = 'Samoa'
+    data_kept.loc[data_kept['source_country_name'] == 'Myanmar', 'source_country_name'] = 'Burma'
+    data_kept.loc[data_kept['source_country_name'] == 'United States Virgin Islands', 'source_country_name'] = 'Virgin Islands'
+    data_kept.loc[data_kept['source_country_name'] == 'Gambia', 'source_country_name'] = 'Gambia, The'
+    data_kept.loc[data_kept['source_country_name'] == 'Falkland Islands', 'source_country_name'] = 'Falkland Islands (Islas Malvinas)'
+    data_kept.loc[data_kept['source_country_name'] == 'Brunei Darussalam', 'source_country_name'] = 'Brunei'
+    data_kept['source_country_code'] = data_kept['source_country_name'].apply(lambda x: name_to_alpha[x.strip()] if x.strip() in name_to_alpha else 'INT')
+    
+    data_kept = data_kept[['IsRootEvent', 'QuadClass', 'EventCode', 'EventRootCode', 'ActionGeo_Lat', 'ActionGeo_Long', 'country_code_alpha', 'source_country_code']]
+    
     data_kept.to_csv('../data/'+str(name)+'.csv')
     
     

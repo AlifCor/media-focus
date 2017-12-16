@@ -4,15 +4,16 @@ function prepareAccordion() {
 
     const accContent = $('.acc-content');
 
-    $(document).on('touchstart click', '.acc-btn', function () {
+    $(document).on('touchstart click', '.acc-btn .arrow', function () {
         if (!clickPolice) {
             clickPolice = true;
+            const $this = $(this).parent().parent();
 
-            let currIndex = $(this).index('.acc-btn'),
+            const currIndex = $this.index('.acc-btn'),
                 targetHeight = $('.acc-content-inner').eq(currIndex).outerHeight();
 
-            $('.acc-btn h1').removeClass('selected');
-            $(this).find('h1').addClass('selected');
+            $('.acc-btn h1, .acc-btn label').removeClass('selected');
+            $this.find('h1, label').addClass('selected');
 
             accContent.stop().animate({height: 0}, animTime);
             accContent.eq(currIndex).stop().animate({height: targetHeight}, animTime);
@@ -73,7 +74,38 @@ function buildAccordion() {
 
         topEvents.forEach((cameoElem) => {
             const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
-            $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).appendTo(accBtn);
+            //$("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).appendTo(accBtn);
+
+            const id = "box-" + cameoElem.CAMEOEVENTCODE;
+            $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
+                $("<input/>", {
+                    "type": "checkbox",
+                    "checked": true,
+                    "id": id,
+                    "class": "top_event_checkbox",
+                    "data-code": cameoElem.CAMEOEVENTCODE
+                }).change(function (e) {
+                        const parent = $(this).parents(".acc-btn");
+                        const currIndex = parent.index(".acc-btn");
+                        if (this.checked) {
+                            $('.acc-content').eq(currIndex).find("input[type='checkbox']").not(":checked").click();
+                        }
+                        else {
+                            $('.acc-content').eq(currIndex).find("input[type='checkbox']:checked").click();
+                        }
+                    }
+                )
+            ).append(
+                $("<div/>").addClass("state p-success")
+                    .append(
+                        $("<label>" + cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
+                            "for": id,
+                            "class": "label_event_checkbox"
+                        })
+                    )
+            ).append(
+                $("<div/>").addClass("arrow")
+            ).appendTo(accBtn);
 
             const accContent = $("<div/>").addClass("acc-content").appendTo(containerEventSelection);
             $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);

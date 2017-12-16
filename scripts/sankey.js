@@ -1,6 +1,14 @@
 // We take the most representative countries and put the rest into "others"
 const COUNTRIES_TRUNCATE = 8;
 
+// We want to remember the types of sankey links
+const sankeyLinkEnum = {
+    COUNTRY_TO_EVENT: 0,
+    EVENT_TO_COUNTRY: 1,
+    SEL_COUNTRY_TO_EVENT: 2,
+    EVENT_TO_SEL_COUNTRY: 3,
+}
+
 let currentSankeyTargetGraph = {
     nodes: [],
     links: [],
@@ -59,6 +67,7 @@ function updateSankey() {
                 d3.select(this).attr(
                     "stroke", "blue",
                 );
+                console.log(d.type)
                 renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
                     row[EVENT_COUNTRY_COL] === d.target.name);
             }
@@ -260,7 +269,8 @@ function renderSankey() {
                 return {
                     source: nodesMapping[pair[0]],
                     target: nodesMapping[pair[1]],
-                    value: link.value
+                    value: link.value,
+                    type: which === "target" ? sankeyLinkEnum.COUNTRY_TO_EVENT : sankeyLinkEnum.EVENT_TO_COUNTRY,
                 };
             });
 
@@ -271,12 +281,14 @@ function renderSankey() {
                         source: nodesMapping[quadClass],
                         target: nodesMapping[selectedCountry + "_target"],
                         value: link.value,
+                        type: sankeyLinkEnum.EVENT_TO_SEL_COUNTRY,
                     };
                 } else {
                     return {
                         source: nodesMapping[selectedCountry + "_source"],
                         target: nodesMapping[quadClass],
                         value: link.value,
+                        type: sankeyLinkEnum.SEL_COUNTRY_TO_EVENT,
                     }
                 }
             });

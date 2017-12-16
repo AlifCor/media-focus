@@ -41,6 +41,7 @@ let paneGeojson = undefined;
 
 let mainCanvas = L.canvas();
 let currentClusteringLevel = -1;
+let countriesLatLng = {};
 
 $(() => {
 
@@ -260,6 +261,7 @@ function renderOverCanvas(filterFun) {
     overCanvas.removeFrom(map);
     getFilteredEvents((filteredEvents) => {
         sourceTargetFilteredEvents = filteredEvents.filter(filterFun);
+        console.log(sourceTargetFilteredEvents)
         drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue");
     });
 }
@@ -321,6 +323,18 @@ $.get(geoJSONData, function (data) {
         onEachFeature: onEachFeature,
         pane: "geojson",
     }).addTo(map)
+    d3.json("data/countries_latlng.json", function(data){
+        countriesLatLng = data;
+        /*
+        L.polyline([countriesLatLng["CAN"], countriesLatLng["USA"]], {color: "green", weight: 0.1}).addTo(map);
+        L.circleMarker(countriesLatLng["USA"], {
+            renderer: canvas,
+            stroke: false,
+            fillColor: "green",
+            radius: 30,
+        }).addTo(map);
+        */
+    })
 
 });
 

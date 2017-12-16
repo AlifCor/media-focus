@@ -98,11 +98,8 @@ p:hover, label:hover {
 
 
 #side_menu {
-    background: #1f2c38;
-    z-index: 1;
-    height: 100%;
-    position: absolute;
     width: 350px;
+    height: 100%;
     top: 0;
     right: -350px;
 }
@@ -126,13 +123,10 @@ p:hover, label:hover {
     margin-bottom: 15px;
 }
 
-#pull {
-    position: absolute;
+#pull_side {
     top: 46%;
     left: -30px;
-    background: #1f2c38;
     width: 30px;
     height: 8%;
     border-radius: 12px 0 0 12px;
-    cursor: pointer;
 }

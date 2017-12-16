@@ -1,3 +1,35 @@
+.menu {
+    background: #1f2c38;
+    z-index: 1;
+    position: absolute;
+}
+
+#slider {
+    width: 80%;
+    left: 10%;
+}
+
+#bottom_menu {
+    width: 100%;
+    height: 100px;
+    bottom: -100px;
+    left: 0;
+}
+
+.pull {
+    position: absolute;
+    background: #1f2c38;
+    cursor: pointer;
+}
+
+#pull_bottom {
+    left: 50%;
+    width: 8%;
+    top: -30px;
+    height: 30px;
+    border-radius: 12px 12px 0 0;
+}
+
 #loader-wrapper .loader-section {
     position: fixed;
     top: 0;

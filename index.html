@@ -13,6 +13,7 @@
     <link rel="stylesheet" type="text/css" href="styles/accordion.css">
     <link rel="stylesheet" type="text/css" href="styles/pretty-checkbox.min.css">
 
+    <link rel="stylesheet" href="styles/iThing-min.css"/>
     <link rel="stylesheet" href="styles/leaflet.css"/>
     <link rel="stylesheet" href="styles/font-awesome.min.css">
 
@@ -21,9 +22,13 @@
     <script src="scripts/d3/d3.min.js"></script>
     <script src="scripts/d3-sankey/d3-sankey.js"></script>
     <script src="scripts/jquery-3.2.1.min.js"></script>
+    <script src="scripts/jquery-ui.min.js"></script>
+    <script src="scripts/jquery.mousewheel.min.js"></script>
+    <script src="scripts/jQDateRangeSlider-min.js"></script>
     <script src="scripts/PruneCluster.js"></script>
 
     <script src="scripts/utils.js"></script>
+    <script src="scripts/date-range.js"></script>
     <script src="scripts/dropdown.js"></script>
     <script src="scripts/drawer.js"></script>
     <script src="scripts/sankey.js"></script>
@@ -61,8 +66,8 @@ Loading screen, inspired by the following tutorials:
 
     <div id="container_map"></div>
 
-    <div id="side_menu">
-        <a id="pull"></a>
+    <div class="menu" id="side_menu">
+        <a class="pull" id="pull_side"></a>
         <div id="side_events">
             <!-- Inspired by https://codepen.io/agrayson/pen/aLpKB -->
             <div id="accordion" class="acc-container">
@@ -75,6 +80,10 @@ Loading screen, inspired by the following tutorials:
                 <div id="acc-elements"></div>
             </div>
         </div>
+    </div>
+    <div class="menu" id="bottom_menu">
+        <a class="pull" id="pull_bottom"></a>
+        <div id="slider"></div>
     </div>
 </div>
 </body>

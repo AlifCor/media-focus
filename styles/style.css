@@ -155,7 +155,7 @@
     margin-left: -40%;
     z-index: 2;
     position: fixed;
-    background-color: rgba(255, 255, 255, 0.8);
+    background: rgba(24, 34, 43, 0.9);
     transition: 0.2s;
     justify-content: center;
 }
@@ -172,6 +172,9 @@
     align-items: center;
 }
 
+#country_close_btn i{
+    color: #496684;
+}
 
 #button_event_drawer {
     position: absolute;

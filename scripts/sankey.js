@@ -17,14 +17,14 @@ let currentSankeySourceGraph = {
 // (even if two countries can have the same color)
 let color = d3.scaleOrdinal(d3.schemeCategory20);
 
-function groupByGetCount(array, f){
+function groupByGetCount(array, f) {
     return d3.nest().key(f).rollup(group => group.length).entries(array);
 }
 
 function updateSankey() {
-    function updateSankeyDiagram(idContainer, which){
+    function updateSankeyDiagram(idContainer, which) {
         let currentSankeyGraph;
-        switch(which){
+        switch (which) {
             case "source":
                 currentSankeyGraph = currentSankeySourceGraph;
                 break;
@@ -63,7 +63,7 @@ function updateSankey() {
 
         function handleMouseOutLink(d) {
             d3.select(this).attr(
-                "stroke", "#000",
+                "stroke", "#ebf0f4",
             );
             overCanvas.removeFrom(map);
         }
@@ -76,10 +76,10 @@ function updateSankey() {
         let link = selectionSankeyContainer.append("g")
             .attr("class", "links")
             .attr("fill", "none")
-            .attr("stroke", "#000")
+            .attr("stroke", "#ebf0f4")
             .attr("stroke-opacity", 0.2)
             .attr("border", "2px solid red")
-            .selectAll("path")
+            .selectAll("path");
 
         let node = selectionSankeyContainer.append("g")
             .attr("class", "nodes")
@@ -106,7 +106,7 @@ function updateSankey() {
             });
 
         node = node
-            // We split because of the _target or _source suffixes
+        // We split because of the _target or _source suffixes
             .data(currentSankeyGraph.nodes.map(elem => {
                 elem["name"] = elem["name"].split("_")[0];
                 return elem;
@@ -126,10 +126,10 @@ function updateSankey() {
             .attr("width", function (d) {
                 return d.x1 - d.x0;
             })
-
-            .style("stroke", "#000")
-            .style("fill", function(d) {
-		        return color(d.name); })
+            .style("stroke", "#ebf0f4")
+            .style("fill", function (d) {
+                return color(d.name);
+            });
 
         node.append("text")
             .attr("x", function (d) {
@@ -164,14 +164,14 @@ function updateSankey() {
 function renderSankey() {
     mapping_cc = []
     getMapping(data => {
-      data.map(country => {
-        mapping_cc[country.Code] = country.Name.trim()
-      });
+        data.map(country => {
+            mapping_cc[country.Code] = country.Name.trim()
+        });
     });
     getFilteredEvents(data => {
-        function getSankeyGraph(which){
+        function getSankeyGraph(which) {
             let selectedCountryCol, countriesCol;
-            switch(which){
+            switch (which) {
                 case "target":
                     selectedCountryCol = EVENT_COUNTRY_COL;
                     countriesCol = SOURCE_COUNTRY_COL;
@@ -191,7 +191,7 @@ function renderSankey() {
                 .slice(0, COUNTRIES_TRUNCATE);
 
             const adaptedData = filteredData.map(row => {
-                if(mostRepresentativeCountries.indexOf(row[countriesCol]) >= 0){
+                if (mostRepresentativeCountries.indexOf(row[countriesCol]) >= 0) {
                     return row;
                 } else {
                     row[countriesCol] = "other";
@@ -203,7 +203,7 @@ function renderSankey() {
             // are put to "others" we can proceed with drawing
 
             let grouped_bis;
-            switch(which){
+            switch (which) {
                 case "target":
                     grouped_bis = groupByGetCount(adaptedData, d => d[SOURCE_COUNTRY_COL] + "#" + d[QUAD_CLASS_COL]);
                     break;
@@ -226,11 +226,11 @@ function renderSankey() {
             const finalNode = [selectedCountry + "_" + which];
 
             function getNameFromCode(code) {
-                if (code == 'INT'){
+                if (code == 'INT') {
                     return 'International'
                 } else if (code in mapping_cc) {
                     return mapping_cc[code]
-                } else if(!isNaN(code)) {
+                } else if (!isNaN(code)) {
                     return QUAD_CLASS_KEYS[parseInt(code) - 1];
                 } else {
                     return code
@@ -238,7 +238,7 @@ function renderSankey() {
             }
 
             let nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
-                .map(val => ({name: val }));
+                .map(val => ({name: val}));
 
             const nodesMapping = nodesAll.reduce((mapping, entry, index) => {
                 mapping[entry.name] = index;
@@ -246,7 +246,7 @@ function renderSankey() {
             }, {});
 
             nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
-                .map(val => ({name: getNameFromCode(val.trim()) }));
+                .map(val => ({name: getNameFromCode(val.trim())}));
 
             const linksCountriesEvents = grouped_bis.map(link => {
                 const pair = link.key.split("#");
@@ -259,7 +259,7 @@ function renderSankey() {
 
             const linksCountry = grouped_2_bis.map(link => {
                 const quadClass = link.key;
-                if(which === "target"){
+                if (which === "target") {
                     return {
                         source: nodesMapping[quadClass],
                         target: nodesMapping[selectedCountry + "_target"],

@@ -43,6 +43,9 @@ let mainCanvas = L.canvas();
 let currentClusteringLevel = -1;
 let countriesLatLng = {};
 
+let selectedCountry = undefined;
+let selectedCountryEvents = [];
+
 $(() => {
 
     $('#mydiv').focus();
@@ -259,9 +262,9 @@ let overCanvas = L.canvas();
 
 function renderOverCanvas(filterFun) {
     overCanvas.removeFrom(map);
+    overCanvas = L.canvas();
     getFilteredEvents((filteredEvents) => {
-        sourceTargetFilteredEvents = filteredEvents.filter(filterFun);
-        console.log(sourceTargetFilteredEvents)
+        sourceTargetFilteredEvents = selectedCountryEvents.filter(filterFun);
         drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue");
     });
 }
@@ -349,6 +352,3 @@ $(document).keyup(function (event) {
         paneGeojson.style.zIndex = 400;
     }
 })
-
-const defaultCountry = "United States";
-let selectedCountry = defaultCountry;

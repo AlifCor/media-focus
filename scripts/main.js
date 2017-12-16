@@ -4,7 +4,9 @@ const getFilteredEvents = (function () {
 
     return function (callback) {
         if (selectedEvents !== undefined) {
-            d3.csv("data_cleaned.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"]))));
+            const filteringLevel = selectedEvents.values().next().length;
+
+            d3.csv("data_cleaned.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"].substr(0, filteringLevel)))));
         }
         else {
             //The user never changed the selection inside the drawer => return all data
@@ -61,8 +63,8 @@ $(() => {
     }).addTo(map);
 
     map.on("zoomend", () => renderMainCanvas());
-    containerEventSelection.on("changed", () => renderMainCanvas());
-    renderMainCanvas();
+    containerEventSelection.on("changed", () => renderMainCanvas(force = true));
+    renderMainCanvas(force = true);
 });
 
 function drawData(dataToShow, groupingFunction, canvas, color) {
@@ -210,14 +212,14 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
     })
 }
 
-function renderMainCanvas(doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
+function renderMainCanvas(force = false, doBefore = startLoadingScreen, doAfter = endLoadingScreen) {
     function getClusteringLevel(zoomLevel) {
         return Math.floor(zoomLevel / CLUSTER_STEP)
     }
 
     const currentZoom = map.getZoom();
     const newClusteringLevel = getClusteringLevel(currentZoom);
-    if (newClusteringLevel !== currentClusteringLevel) {
+    if (newClusteringLevel !== currentClusteringLevel || force) {
         if (doBefore !== undefined) {
             doBefore();
         }

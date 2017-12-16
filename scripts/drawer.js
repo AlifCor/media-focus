@@ -1,6 +1,6 @@
 function prepareAccordion() {
-    let animTime = 300,
-        clickPolice = false;
+    const animTime = 300;
+    let clickPolice = false;
 
     const accContent = $('.acc-content');
 
@@ -51,7 +51,7 @@ let selectedEventCodesChanged = false, filteringLevel = 2;
 
 $(() =>
     $("#filter-level").change(() => {
-            const newFilterlingLevel = $("#filter-level").val();
+            const newFilterlingLevel = parseInt($("#filter-level").val());
             if (newFilterlingLevel !== filteringLevel) {
                 filteringLevel = newFilterlingLevel;
                 buildAccordion();
@@ -61,42 +61,49 @@ $(() =>
 );
 
 function buildAccordion() {
-    const containerEventSelection = $("#acc-elements");
-    containerEventSelection.html("");
-    const topEvents = cameoData.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel - 1);
-    const eventCodes = cameoData.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel);
+    const containerEventSelection = $("#acc-elements"), animTime = 300;
 
-    topEvents.forEach((cameoElem, index) => {
-        const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
-        $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).appendTo(accBtn);
+    containerEventSelection.animate({opacity: 0}, animTime);
 
-        const accContent = $("<div/>").addClass("acc-content").appendTo(containerEventSelection);
-        $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
-    });
+    setTimeout(function () {
+        const topEvents = cameoData.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel - 1);
+        const eventCodes = cameoData.filter((cameoElem) => cameoElem.CAMEOEVENTCODE.length === filteringLevel);
 
-    eventCodes.forEach((cameoElem, index) => {
-        const id = "box-" + cameoElem.CAMEOEVENTCODE;
-        const container = $(`#events-${categoryForEvent(cameoElem.CAMEOEVENTCODE)}`);
+        containerEventSelection.html("");
 
-        $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
-            $("<input/>", {
-                "type": "checkbox",
-                "checked": true,
-                "id": id,
-                "class": "event_checkbox",
-                "data-code": cameoElem.CAMEOEVENTCODE
-            }).change(() => selectedEventCodesChanged = true)
-        ).append(
-            $("<div/>").addClass("state p-success").append(
-                $("<label>" + cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
-                    "for": id,
-                    "class": "label_event_checkbox"
-                })
-            )
-        ).appendTo(container);
-    });
+        topEvents.forEach((cameoElem) => {
+            const accBtn = $("<div/>").addClass("acc-btn").appendTo(containerEventSelection);
+            $("<h1/>").text(cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION)).appendTo(accBtn);
 
-    prepareAccordion();
+            const accContent = $("<div/>").addClass("acc-content").appendTo(containerEventSelection);
+            $("<div/>").attr("id", "events-" + cameoElem.CAMEOEVENTCODE).addClass("acc-content-inner").appendTo(accContent);
+        });
+
+        eventCodes.forEach((cameoElem) => {
+            const id = "box-" + cameoElem.CAMEOEVENTCODE;
+            const container = $(`#events-${categoryForEvent(cameoElem.CAMEOEVENTCODE)}`);
+
+            $("<div/>").addClass("pretty p-default p-smooth p-bigger").append(
+                $("<input/>", {
+                    "type": "checkbox",
+                    "checked": true,
+                    "id": id,
+                    "class": "event_checkbox",
+                    "data-code": cameoElem.CAMEOEVENTCODE
+                }).change(() => selectedEventCodesChanged = true)
+            ).append(
+                $("<div/>").addClass("state p-success").append(
+                    $("<label>" + cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
+                        "for": id,
+                        "class": "label_event_checkbox"
+                    })
+                )
+            ).appendTo(container);
+        });
+
+        containerEventSelection.stop().animate({opacity: 1}, animTime);
+        prepareAccordion();
+    }, animTime);
 }
 
 let containerMap, sideMenu;

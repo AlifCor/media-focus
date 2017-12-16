@@ -17,6 +17,9 @@ html, body {
 }
 
 .acc-btn {
+    position: relative;
+    top: 0;
+    left: 0;
     width:100%;
     margin:0 auto;
     padding:20px 25px;
@@ -28,6 +31,22 @@ html, body {
 
 .acc-btn:hover {
     background-color: #2d3f51;
+}
+
+.acc-btn .arrow {
+    position: absolute;
+    right: -30px;
+    top: 0;
+    content: "";
+    width: 0;
+    height: 0;
+    border: 10px solid transparent;
+    border-color: transparent transparent transparent #496684;
+    transition: all 0.2s ease-in;
+}
+
+.acc-btn .arrow:hover {
+    border-color: transparent transparent transparent #FFFFFF;
 }
 
 .acc-content {
@@ -52,9 +71,25 @@ h1 {
     color:#ffffff;
 }
 
+.acc-btn label {
+    font-size: 0.95em;
+    font-family: 'Lato', sans-serif;
+    font-weight: bold;
+}
+
+.acc-content .pretty {
+    font-size: 0.9em;
+}
+
 p, label {
-    font:400 14px/16px 'Lato', sans-serif;
-    color:#798795;
+    font-size: 0.9em;
+    font-family: 'Lato', sans-serif;
+    color: #b9c9d8;
+    transition: all 0.2s ease-in;
+}
+
+p:hover, label:hover {
+    color: #acbfd1;
 }
 
 .selected {

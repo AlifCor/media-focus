@@ -5,27 +5,27 @@ References:
 */
 $(() =>
     $('select').each(function () {
-        var $this = $(this), numberOfOptions = $(this).children('option').length;
+        const $this = $(this), numberOfOptions = $(this).children('option').length;
 
         $this.addClass('select-hidden');
         $this.wrap('<div class="select"></div>');
         $this.after('<div class="select-styled"></div>');
 
-        var $styledSelect = $this.next('div.select-styled');
+        const $styledSelect = $this.next('div.select-styled');
         $styledSelect.text($this.children('option').eq(0).text());
 
-        var $list = $('<ul />', {
+        const $list = $('<ul />', {
             'class': 'select-options'
         }).insertAfter($styledSelect);
 
-        for (var i = 0; i < numberOfOptions; i++) {
+        for (let i = 0; i < numberOfOptions; i++) {
             $('<li />', {
                 text: $this.children('option').eq(i).text(),
                 rel: $this.children('option').eq(i).val()
             }).appendTo($list);
         }
 
-        var $listItems = $list.children('li');
+        const $listItems = $list.children('li');
 
         $styledSelect.click(function (e) {
             e.stopPropagation();
@@ -43,7 +43,6 @@ $(() =>
             $this.val($(this).attr('rel'));
             $this.trigger("change");
             $list.hide();
-            //console.log($this.val());
         });
 
         $(document).click(function () {

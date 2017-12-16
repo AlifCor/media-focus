@@ -129,11 +129,12 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             let svg = d3.select(div)
                 .attr("width", widthBarChart)
                 .attr("height", heightBarChart)
+                .attr("fill", "white")
                 .append("svg")
                 .attr("width", widthBarChart)
                 .attr("height", heightBarChart);
 
-            let margin = {top: 50, right: 20, bottom: 30, left: 80};
+            let margin = {top: 50, right: 20, bottom: 30, left: 30};
             let width = +svg.attr("width") - margin.left - margin.right,
                 height = +svg.attr("height") - margin.top - margin.bottom;
             let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -181,13 +182,15 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
             let legend = svg.append("g")
                 .attr("font-family", "sans-serif")
                 .attr("font-size", 10)
+                .attr("height", 10)
+
                 .selectAll("g")
                 .data(QUAD_CLASS_KEYS)
                 .enter().append("g")
                 .attr("transform", function (d, i) {
                     return "translate(" + (Math.floor(i / 2) * widthBarChart / 2) + ", " +
                         (i % 2 * 30) + ")";
-                })
+                });
 
             legend.append("rect")
                 .attr("width", 10)
@@ -196,10 +199,8 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
 
             legend.append("text")
                 .attr("height", 10)
-                .attr("y", 0)
+                .attr("y", 8)
                 .attr("x", 15)
-                .attr("dy", "0.32em")
-                .attr("height", 10)
                 .text((d, i) => d);
 
             circle.bindPopup(div);
@@ -282,7 +283,9 @@ let canvasFilter = L.canvas();
 let geoJSONData = "data/custom.geo.json";
 let customStyle = {
     stroke: false,
+    fillOpacity: 0,
     //weight: 1.2,
+    color: "black",
     cursor: "pointer",
 };
 
@@ -298,7 +301,13 @@ function onEachFeature(feature, layer) {
     layer.on("click", function (e) {
         clickFeature(e, feature.properties);
     });
-    boundingCountries[feature.properties["name"]] = layer.getBounds();
+    layer.on("mouseover", function(e){
+        layer.setStyle({fillOpacity: 0.1});
+    })
+    layer.on("mouseout", function(e){
+        layer.setStyle({fillOpacity: 0});
+    })
+    boundingCountries[feature.properties["iso_a3"]] = layer.getBounds();
 }
 
 $.get(geoJSONData, function (data) {

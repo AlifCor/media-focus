@@ -17,14 +17,14 @@ let currentSankeySourceGraph = {
 // (even if two countries can have the same color)
 let color = d3.scaleOrdinal(d3.schemeCategory20);
 
-function groupByGetCount(array, f){
+function groupByGetCount(array, f) {
     return d3.nest().key(f).rollup(group => group.length).entries(array);
 }
 
 function updateSankey() {
-    function updateSankeyDiagram(idContainer, which){
+    function updateSankeyDiagram(idContainer, which) {
         let currentSankeyGraph;
-        switch(which){
+        switch (which) {
             case "source":
                 currentSankeyGraph = currentSankeySourceGraph;
                 break;
@@ -158,6 +158,7 @@ function updateSankey() {
                     return d.name + "\n" + format(d.value);
                 });
         }
+
     }
 
     updateSankeyDiagram("#container_sankey_countries", "target");
@@ -167,14 +168,14 @@ function updateSankey() {
 function renderSankey() {
     mapping_cc = []
     getMapping(data => {
-      data.map(country => {
-        mapping_cc[country.Code] = country.Name.trim()
-      });
+        data.map(country => {
+            mapping_cc[country.Code] = country.Name.trim()
+        });
     });
     getFilteredEvents(data => {
-        function getSankeyGraph(which){
+        function getSankeyGraph(which) {
             let selectedCountryCol, countriesCol;
-            switch(which){
+            switch (which) {
                 case "target":
                     selectedCountryCol = EVENT_COUNTRY_COL;
                     countriesCol = SOURCE_COUNTRY_COL;
@@ -194,7 +195,7 @@ function renderSankey() {
                 .slice(0, COUNTRIES_TRUNCATE);
 
             const adaptedData = filteredData.map(row => {
-                if(mostRepresentativeCountries.indexOf(row[countriesCol]) >= 0){
+                if (mostRepresentativeCountries.indexOf(row[countriesCol]) >= 0) {
                     return row;
                 } else {
                     row[countriesCol] = "other";
@@ -206,7 +207,7 @@ function renderSankey() {
             // are put to "others" we can proceed with drawing
 
             let grouped_bis;
-            switch(which){
+            switch (which) {
                 case "target":
                     grouped_bis = groupByGetCount(adaptedData, d => d[SOURCE_COUNTRY_COL] + "#" + d[QUAD_CLASS_COL]);
                     break;
@@ -229,11 +230,11 @@ function renderSankey() {
             const finalNode = [selectedCountry + "_" + which];
 
             function getNameFromCode(code) {
-                if (code == 'INT'){
+                if (code == 'INT') {
                     return 'International'
                 } else if (code in mapping_cc) {
                     return mapping_cc[code]
-                } else if(!isNaN(code)) {
+                } else if (!isNaN(code)) {
                     return QUAD_CLASS_KEYS[parseInt(code) - 1];
                 } else {
                     return code
@@ -241,7 +242,7 @@ function renderSankey() {
             }
 
             let nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
-                .map(val => ({name: val }));
+                .map(val => ({name: val}));
 
             console.log(nodesAll)
 
@@ -264,7 +265,7 @@ function renderSankey() {
 
             const linksCountry = grouped_2_bis.map(link => {
                 const quadClass = link.key;
-                if(which === "target"){
+                if (which === "target") {
                     return {
                         source: nodesMapping[quadClass],
                         target: nodesMapping[selectedCountry + "_target"],

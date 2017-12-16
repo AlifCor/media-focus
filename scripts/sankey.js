@@ -11,6 +11,12 @@ let currentSankeySourceGraph = {
     links: [],
 };
 
+
+// We define a general color palette so that each country has one attributed color
+// in the sankey diagram
+// (even if two countries can have the same color)
+let color = d3.scaleOrdinal(d3.schemeCategory20);
+
 function groupByGetCount(array, f){
     return d3.nest().key(f).rollup(group => group.length).entries(array);
 }
@@ -40,8 +46,7 @@ function updateSankey() {
         let formatNumber = d3.format(",.0f"),
             format = function (d) {
                 return formatNumber(d) + " News";
-            },
-            color = d3.scaleOrdinal(d3.schemeCategory10);
+            };
 
         let sankey = d3.sankey()
             .nodeWidth(15)
@@ -101,7 +106,11 @@ function updateSankey() {
             });
 
         node = node
-            .data(currentSankeyGraph.nodes)
+            // We split because of the _target or _source suffixes
+            .data(currentSankeyGraph.nodes.map(elem => {
+                elem["name"] = elem["name"].split("_")[0];
+                return elem;
+            }))
             .enter().append("g");
 
         node.append("rect")
@@ -118,7 +127,9 @@ function updateSankey() {
                 return d.x1 - d.x0;
             })
 
-            .attr("stroke", "#000");
+            .style("stroke", "#000")
+            .style("fill", function(d) {
+		        return color(d.name); })
 
         node.append("text")
             .attr("x", function (d) {
@@ -130,8 +141,7 @@ function updateSankey() {
             .attr("dy", "0.35em")
             .attr("text-anchor", "end")
             .text(function (d) {
-                // We split because of the _target or _source identifiers
-                return d.name.split("_")[0];
+                return d.name;
             })
             .filter(function (d) {
                 return d.x0 < width / 2;
@@ -143,8 +153,7 @@ function updateSankey() {
 
         node.append("title")
             .text(function (d) {
-                // We split because of the _target or _source identifiers
-                return d.name.split("_")[0] + "\n" + format(d.value);
+                return d.name + "\n" + format(d.value);
             });
     }
 
@@ -159,7 +168,6 @@ function renderSankey() {
         mapping_cc[country.Code] = country.Name.trim()
       });
     });
-    console.log(mapping_cc)
     getFilteredEvents(data => {
         function getSankeyGraph(which){
             let selectedCountryCol, countriesCol;
@@ -212,19 +220,21 @@ function renderSankey() {
 
             const nodesCountries = uniq(grouped_bis.map(link => link.key.split("#")[1]));
 
-            const nodesEvents = uniq(grouped_bis.map(link => link.key.split("#")[0]));
+            const nodesEvents = uniq(grouped_bis.map(link => link.key.split("#")[0]))
 
             // We add this one because we need one special node for the selected country
             const finalNode = [selectedCountry + "_" + which];
 
             function getNameFromCode(code) {
-              if (code == 'INT'){
-                return 'International'
-              } else if (code in mapping_cc) {
-                return mapping_cc[code]
-              } else {
-                return code
-              }
+                if (code == 'INT'){
+                    return 'International'
+                } else if (code in mapping_cc) {
+                    return mapping_cc[code]
+                } else if(!isNaN(code)) {
+                    return QUAD_CLASS_KEYS[parseInt(code) - 1];
+                } else {
+                    return code
+                }
             }
 
             let nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)

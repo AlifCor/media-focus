@@ -84,7 +84,7 @@ function buildAccordion() {
                     "id": id,
                     "class": "top_event_checkbox",
                     "data-code": cameoElem.CAMEOEVENTCODE
-                }).change(function (e) {
+                }).change(function () {
                         const parent = $(this).parents(".acc-btn");
                         const currIndex = parent.index(".acc-btn");
                         if (this.checked) {
@@ -152,13 +152,13 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
 
             buildAccordion();
 
-            containerMap.hover(() => {
+            containerMap.hover(function () {
                     sideMenu.stop();
                     sideMenu.animate({
                         right: "-" + sideMenu.width() + "px"
                     }, 200);
                     if (selectedEventCodesChanged === true) {
-                        containerEventSelection.trigger("changed", [new Set(containerEventSelection.find('.event_checkbox:checkbox:checked').map((i, el) => $(el).attr("data-code")).get())]);
+                        containerEventSelection.trigger("changed", [new Set(containerEventSelection.find('.event_checkbox:checked').map((i, el) => $(el).attr("data-code")).get())]);
                         selectedEventCodesChanged = false;
                     }
                 }

@@ -165,7 +165,6 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                 .attr("width", d => xScale(d[1]) - xScale(d[0]))
                 .append("title")
                 .text(function (d) {
-                    console.log(neededEvents)
                     return d.data["country"]
                 });
 
@@ -189,8 +188,6 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
                     return "translate(" + (Math.floor(i / 2) * widthBarChart / 2) + ", " +
                         (i % 2 * 30) + ")";
                 })
-
-            console.log("height: " + legend.attr("height"))
 
             legend.append("rect")
                 .attr("width", 10)
@@ -290,7 +287,6 @@ let customStyle = {
 
 function clickFeature(e, properties) {
     let layer = e.target;
-    console.log(properties.name);
     showCountryDetails(properties["name"]);
 
 }

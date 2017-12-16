@@ -36,7 +36,7 @@ const CIRCLE_RADIUS_FACTOR = 0.04;
 let firstLoad = true;
 
 // Here we declare the general DOM references
-let sideEventsDrawer, sideCountryDetails, countryCloseBtn, map, containerEventSelection;
+let sideEventsDrawer, bottomDrawer, sideCountryDetails, countryCloseBtn, map, containerEventSelection;
 let paneGeojson = undefined;
 
 let mainCanvas = L.canvas();
@@ -53,11 +53,21 @@ $(() => {
     // We create our Leaflet map
     map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);
     sideEventsDrawer = $("#side_menu");
+    bottomDrawer = $("#bottom_menu");
     sideCountryDetails = $("#side_country_details");
     countryCloseBtn = $("#country_close_btn");
     containerEventSelection = $("#accordion");
 
     countryCloseBtn.click(closeCountryDetails);
+    $(document).keydown((e) => {
+        if(e.which === 27){
+            closeCountryDetails();
+        }
+    });
+
+    $("#slider").bind("valuesChanged", function(e, data){
+        console.log("Values just changed. min: " + data.values.min + " max: " + data.values.max);
+    });
 
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
         attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
@@ -242,6 +252,14 @@ function renderMainCanvas(force = false, doBefore = startLoadingScreen, doAfter 
                     doAfter();
                     if (firstLoad) {
                         firstLoad = false;
+
+                        setTimeout(() => bottomDrawer.animate({
+                            bottom: "0"
+                        }, 300), 500);
+
+                        setTimeout(() => bottomDrawer.animate({
+                            bottom: "-" + bottomDrawer.height() + "px"
+                        }, 200), 1300);
 
                         setTimeout(() => sideEventsDrawer.animate({
                             right: "-" + sideEventsDrawer.width() / 4 + "px"

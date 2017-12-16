@@ -18,10 +18,10 @@ function getMapping(callback) {
 }
 
 // Constants:
-const SOURCE_COUNTRY_COL = "source_country_name";
+const SOURCE_COUNTRY_COL = "source_country_code";
 const QUAD_CLASS_COL = "QuadClass";
 const QUAD_CLASS_KEYS = ["Verbal Cooperation", "Material Cooperation", "Verbal Conflict", "Material Conflict"];
-const EVENT_COUNTRY_COL = "country_name";
+const EVENT_COUNTRY_COL = "country_code_alpha";
 const EVENT_CODE_TYPE = "EventRootCode";
 const LAT_COL = "ActionGeo_Lat";
 const LONG_COL = "ActionGeo_Long";
@@ -262,6 +262,7 @@ function renderOverCanvas(filterFun) {
 }
 
 function showCountryDetails(countryCode) {
+    console.log(countryCode)
     selectedCountry = countryCode;
     sideCountryDetails.css("margin-left", "0");
     renderSankey();
@@ -287,7 +288,7 @@ let customStyle = {
 
 function clickFeature(e, properties) {
     let layer = e.target;
-    showCountryDetails(properties["name"]);
+    showCountryDetails(properties["iso_a3"]);
 
 }
 

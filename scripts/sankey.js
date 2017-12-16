@@ -240,13 +240,15 @@ function renderSankey() {
             let nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
                 .map(val => ({name: val }));
 
+            console.log(nodesAll)
+
             const nodesMapping = nodesAll.reduce((mapping, entry, index) => {
                 mapping[entry.name] = index;
                 return mapping;
             }, {});
 
             nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
-                .map(val => ({name: getNameFromCode(val.trim()) }));
+                .map(val => ({name: getNameFromCode(val.split("_")[0].trim()) }));
 
             const linksCountriesEvents = grouped_bis.map(link => {
                 const pair = link.key.split("#");

@@ -19,6 +19,9 @@ let currentSankeySourceGraph = {
     links: [],
 };
 
+// This is for avoinding deadlocks for the hovering part of the sankey links.
+let queueHovering = d3.queue(1);
+
 function getNameFromCode(code) {
     if (code == 'INT') {
         return 'International'
@@ -79,14 +82,13 @@ function updateSankey() {
                 d3.select(this).attr(
                     "stroke", "blue",
                 );
-                console.log(d.type)
-                console.log(d.target.name)
-                if(d.type === sankeyLinkEnum.COUNTRY_TO_EVENT){
-                    renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
-                        row[QUAD_CLASS_COL] == d.target.name)
+                function hoverShowMap(sourceCol, targetCol, callback){
+                    renderOverCanvas(row => row[sourceCol] === d.source.name &&
+                        row[targetCol] == d.target.name, callback);
                 }
-                renderOverCanvas(row => row[SOURCE_COUNTRY_COL] === d.source.name &&
-                    row[EVENT_COUNTRY_COL] === d.target.name);
+                if(d.type === sankeyLinkEnum.COUNTRY_TO_EVENT){
+                    queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL);
+                }
             }
 
             function handleMouseOutLink(d) {
@@ -200,7 +202,7 @@ function renderSankey() {
         });
     });
     getFilteredEvents(data => {
-        selectedCountryEvents = data.filter(d => d[EVENT_COUNTRY_COL] === selectedCountry || 
+        selectedCountryEvents = data.filter(d => d[EVENT_COUNTRY_COL] === selectedCountry ||
             d[SOURCE_COUNTRY_COL] === selectedCountry);
         function getSankeyGraph(which) {
             let selectedCountryCol, countriesCol;

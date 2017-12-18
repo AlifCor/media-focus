@@ -278,12 +278,13 @@ function renderMainCanvas(force = false, doBefore = startLoadingScreen, doAfter 
 // Corresponds to the elements we want to show when we hover on the sankey links
 let overCanvas = L.canvas();
 
-function renderOverCanvas(filterFun) {
+function renderOverCanvas(filterFun, callback) {
     overCanvas.removeFrom(map);
     overCanvas = L.canvas();
     getFilteredEvents((filteredEvents) => {
         sourceTargetFilteredEvents = selectedCountryEvents.filter(filterFun);
         drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue");
+        callback(null);
     });
 }
 

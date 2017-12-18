@@ -234,7 +234,7 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                         color: color,
                         renderer: canvas,
                         weight: radiusCircle / 2,
-                        opacity: 0.5,
+                        opacity: 0.2,
                     }).addTo(map);
                 }
             })

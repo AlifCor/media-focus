@@ -281,6 +281,10 @@
   display: none;
 }
 
+.leaflet-popup-content-wrapper {
+  background-color: #000
+}
+
 html {
     height: 100%;
     position: relative;;

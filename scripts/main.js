@@ -114,7 +114,6 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 circle.setStyle({fillOpacity: 0.2});
             });
             circle.on("click", () => {
-                console.log(data.value[1]);
                 const neededEvents = data.value[1]
                     .sort((a, b) => b.values.length - a.values.length)
                     .slice(0, 6);
@@ -148,8 +147,8 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 let svg = d3.select(div)
                     .attr("width", widthBarChart)
                     .attr("height", heightBarChart)
-                    .attr("fill", "white")
                     .append("svg")
+                    .attr("fill", "white")
                     .attr("width", widthBarChart)
                     .attr("height", heightBarChart);
 
@@ -199,6 +198,7 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                     .call(yAxis);
 
                 let legend = svg.append("g")
+                    .attr("fill", "white")
                     .attr("font-family", "sans-serif")
                     .attr("font-size", 10)
                     .attr("height", 10)

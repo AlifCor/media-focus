@@ -495,7 +495,7 @@
 	}
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-	background: white;
+	background: #24303B;
 	color: #333;
 	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
 	}

@@ -82,7 +82,10 @@ function updateSankey() {
                 d3.select(this).attr(
                     "stroke", "blue",
                 );
-                console.log(d.source.name)
+                /*console.log(d.source.name)
+                if(d.source.name === "other"){
+                    console.log(JSON.stringify(currentSankeyGraph.mostRepresentativeCountries))
+                }*/
                 function hoverShowMap(sourceCol, targetCol, selCountryCol, callback){
                     renderOverCanvas(row => row[sourceCol] === d.source.name.split("_")[0] &&
                         row[targetCol] === d.target.name.split("_")[0] &&
@@ -103,7 +106,12 @@ function updateSankey() {
                 d3.select(this).attr(
                     "stroke", "#000",
                 );
-                overCanvas.removeFrom(map);
+                function removeOverCanvas(callback){
+                    overCanvas.removeFrom(map);
+                    callback(null);
+                }
+                queueHovering
+                    .defer(removeOverCanvas);
             }
 
             function handleClickLink(d) {
@@ -313,6 +321,7 @@ function renderSankey() {
             return {
                 nodes: nodesAll,
                 links: linksAll,
+                mostRepresentativeCountries: mostRepresentativeCountries,
             };
         }
 

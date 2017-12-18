@@ -82,12 +82,20 @@ function updateSankey() {
                 d3.select(this).attr(
                     "stroke", "blue",
                 );
-                function hoverShowMap(sourceCol, targetCol, callback){
-                    renderOverCanvas(row => row[sourceCol] === d.source.name &&
-                        row[targetCol] == d.target.name, callback);
+                console.log(d.source.name)
+                function hoverShowMap(sourceCol, targetCol, selCountryCol, callback){
+                    renderOverCanvas(row => row[sourceCol] === d.source.name.split("_")[0] &&
+                        row[targetCol] === d.target.name.split("_")[0] &&
+                        row[selCountryCol] === selectedCountry, callback);
                 }
                 if(d.type === sankeyLinkEnum.COUNTRY_TO_EVENT){
-                    queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL);
+                    queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL, EVENT_COUNTRY_COL);
+                } else if(d.type === sankeyLinkEnum.EVENT_TO_SEL_COUNTRY){
+                    queueHovering.defer(hoverShowMap, QUAD_CLASS_COL, EVENT_COUNTRY_COL, EVENT_COUNTRY_COL);
+                } else if(d.type === sankeyLinkEnum.SEL_COUNTRY_TO_EVENT){
+                    queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL, SOURCE_COUNTRY_COL);
+                } else if(d.type === sankeyLinkEnum.EVENT_TO_COUNTRY){
+                    queueHovering.defer(hoverShowMap, QUAD_CLASS_COL, EVENT_COUNTRY_COL, SOURCE_COUNTRY_COL);
                 }
             }
 

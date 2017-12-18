@@ -81,7 +81,7 @@ $(() => {
     renderMainCanvas(force = true);
 });
 
-function drawData(dataToShow, groupingFunction, canvas, color) {
+function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) {
     function meand3(group, attrib) {
         return d3.mean(group.map(d => parseFloat(d[attrib])))
     }
@@ -97,131 +97,148 @@ function drawData(dataToShow, groupingFunction, canvas, color) {
         const meanCoord = data.value[3];
         const latlngArray = data.key.split(",");
         const latlng = new L.LatLng(meanCoord[0], meanCoord[1]);
+        const radiusCircle = (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2 ** (CLUSTER_STEP * 0.8 * currentClusteringLevel);
         let circle = L.circleMarker(latlng, {
             renderer: canvas,
             stroke: false,
             fillColor: color,
-            radius: (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2 ** (CLUSTER_STEP * 0.8 * currentClusteringLevel),
+            radius: radiusCircle,
         });
-        circle.on('mouseover', function () {
-            circle.setStyle({fillOpacity: 0.5});
-        });
-
-        // Un-highlight the marker on hover out
-        circle.on('mouseout', function () {
-            circle.setStyle({fillOpacity: 0.2});
-        });
-        circle.on("click", () => {
-            const neededEvents = data.value[1]
-                .sort((a, b) => b.values.length - a.values.length)
-                .slice(0, 6);
-            const eventsNestedQuadClass = neededEvents.map(country => {
-                const tempNest = d3.nest()
-                    .key(d => d[QUAD_CLASS_COL])
-                    .rollup(group => group.length)
-                    .entries(country.values)
-
-                //We create an object where the key is the quad class and the value is the number of times it appears
-                const valuesQC = tempNest.reduce((prev, curr) => {
-                    prev[curr["key"]] = curr["value"];
-                    return prev
-                }, {});
-                const total = tempNest.reduce((total, pair) => total + pair["value"], 0);
-                let result = {
-                    "country": country.key,
-                    "total": total,
-                };
-                QUAD_CLASS_KEYS.forEach((elem, i) => {
-                    result[elem] = valuesQC["" + (i + 1)] || 0
-                })
-                return result;
+        if(circleClickable){
+            circle.on('mouseover', function () {
+                circle.setStyle({fillOpacity: 0.5});
             });
 
-            let div = document.createElement("div");
+            // Un-highlight the marker on hover out
+            circle.on('mouseout', function () {
+                circle.setStyle({fillOpacity: 0.2});
+            });
+            circle.on("click", () => {
+                console.log(data.value[1]);
+                const neededEvents = data.value[1]
+                    .sort((a, b) => b.values.length - a.values.length)
+                    .slice(0, 6);
+                const eventsNestedQuadClass = neededEvents.map(country => {
+                    const tempNest = d3.nest()
+                        .key(d => d[QUAD_CLASS_COL])
+                        .rollup(group => group.length)
+                        .entries(country.values)
 
-            let widthBarChart = 300;
-            let heightBarChart = 36.7 * eventsNestedQuadClass.length + 80;
-
-            let svg = d3.select(div)
-                .attr("width", widthBarChart)
-                .attr("height", heightBarChart)
-                .attr("fill", "white")
-                .append("svg")
-                .attr("width", widthBarChart)
-                .attr("height", heightBarChart);
-
-            let margin = {top: 50, right: 20, bottom: 30, left: 30};
-            let width = +svg.attr("width") - margin.left - margin.right,
-                height = +svg.attr("height") - margin.top - margin.bottom;
-            let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-            let xScale = d3.scaleLinear().rangeRound([0, width]);
-            let yScale = d3.scaleBand().rangeRound([height, 0]).padding(0.1);
-            let color = d3.scaleOrdinal(d3.schemeCategory20);
-            let xAxis = d3.axisBottom(xScale).ticks(5);
-            let yAxis = d3.axisLeft(yScale);
-
-            let stack = d3.stack().keys(QUAD_CLASS_KEYS).offset(d3.stackOffsetNone);
-            let layers = stack(eventsNestedQuadClass);
-            yScale.domain(eventsNestedQuadClass.map(d => d["country"]));
-            let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
-            xScale.domain([0, maxTotal]).nice();
-
-            let layer = g.selectAll(".layer")
-                .data(layers)
-                .enter().append("g")
-                .attr("class", "layer")
-                .style("fill", (d, i) => color(i));
-
-            layer.selectAll("rect")
-                .data(d => d)
-                .enter().append("rect")
-                .attr("y", d => yScale(d.data["country"]))
-                .attr("x", d => xScale(d[0]))
-                .attr("height", yScale.bandwidth())
-                .attr("width", d => xScale(d[1]) - xScale(d[0]))
-                .append("title")
-                .text(function (d) {
-                    return d.data["country"]
+                    //We create an object where the key is the quad class and the value is the number of times it appears
+                    const valuesQC = tempNest.reduce((prev, curr) => {
+                        prev[curr["key"]] = curr["value"];
+                        return prev
+                    }, {});
+                    const total = tempNest.reduce((total, pair) => total + pair["value"], 0);
+                    let result = {
+                        "country": country.key,
+                        "total": total,
+                    };
+                    QUAD_CLASS_KEYS.forEach((elem, i) => {
+                        result[elem] = valuesQC["" + (i + 1)] || 0
+                    })
+                    return result;
                 });
 
-            g.append("g")
-                .attr("class", "axis axis--x")
-                .attr("transform", "translate(0," + (height + 5) + ")")
-                .call(xAxis);
+                let div = document.createElement("div");
 
-            g.append("g")
-                .attr("class", "axis axis--y")
-                .attr("transform", "translate(0,0)")
-                .call(yAxis);
+                let widthBarChart = 300;
+                let heightBarChart = 36.7 * eventsNestedQuadClass.length + 80;
 
-            let legend = svg.append("g")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 10)
-                .attr("height", 10)
+                let svg = d3.select(div)
+                    .attr("width", widthBarChart)
+                    .attr("height", heightBarChart)
+                    .attr("fill", "white")
+                    .append("svg")
+                    .attr("width", widthBarChart)
+                    .attr("height", heightBarChart);
 
-                .selectAll("g")
-                .data(QUAD_CLASS_KEYS)
-                .enter().append("g")
-                .attr("transform", function (d, i) {
-                    return "translate(" + (Math.floor(i / 2) * widthBarChart / 2) + ", " +
-                        (i % 2 * 30) + ")";
-                });
+                let margin = {top: 50, right: 20, bottom: 30, left: 30};
+                let width = +svg.attr("width") - margin.left - margin.right,
+                    height = +svg.attr("height") - margin.top - margin.bottom;
+                let g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            legend.append("rect")
-                .attr("width", 10)
-                .attr("height", 10)
-                .attr("fill", (d, i) => color(i));
+                let xScale = d3.scaleLinear().rangeRound([0, width]);
+                let yScale = d3.scaleBand().rangeRound([height, 0]).padding(0.1);
+                let color = d3.scaleOrdinal(d3.schemeCategory20);
+                let xAxis = d3.axisBottom(xScale).ticks(5);
+                let yAxis = d3.axisLeft(yScale);
 
-            legend.append("text")
-                .attr("height", 10)
-                .attr("y", 8)
-                .attr("x", 15)
-                .text((d, i) => d);
+                let stack = d3.stack().keys(QUAD_CLASS_KEYS).offset(d3.stackOffsetNone);
+                let layers = stack(eventsNestedQuadClass);
+                yScale.domain(eventsNestedQuadClass.map(d => d["country"]));
+                let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
+                xScale.domain([0, maxTotal]).nice();
 
-            circle.bindPopup(div);
-            circle.openPopup();
-        });
+                let layer = g.selectAll(".layer")
+                    .data(layers)
+                    .enter().append("g")
+                    .attr("class", "layer")
+                    .style("fill", (d, i) => color(i));
+
+                layer.selectAll("rect")
+                    .data(d => d)
+                    .enter().append("rect")
+                    .attr("y", d => yScale(d.data["country"]))
+                    .attr("x", d => xScale(d[0]))
+                    .attr("height", yScale.bandwidth())
+                    .attr("width", d => xScale(d[1]) - xScale(d[0]))
+                    .append("title")
+                    .text(function (d) {
+                        return d.data["country"]
+                    });
+
+                g.append("g")
+                    .attr("class", "axis axis--x")
+                    .attr("transform", "translate(0," + (height + 5) + ")")
+                    .call(xAxis);
+
+                g.append("g")
+                    .attr("class", "axis axis--y")
+                    .attr("transform", "translate(0,0)")
+                    .call(yAxis);
+
+                let legend = svg.append("g")
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", 10)
+                    .attr("height", 10)
+
+                    .selectAll("g")
+                    .data(QUAD_CLASS_KEYS)
+                    .enter().append("g")
+                    .attr("transform", function (d, i) {
+                        return "translate(" + (Math.floor(i / 2) * widthBarChart / 2) + ", " +
+                            (i % 2 * 30) + ")";
+                    });
+
+                legend.append("rect")
+                    .attr("width", 10)
+                    .attr("height", 10)
+                    .attr("fill", (d, i) => color(i));
+
+                legend.append("text")
+                    .attr("height", 10)
+                    .attr("y", 8)
+                    .attr("x", 15)
+                    .text((d, i) => d);
+
+                circle.bindPopup(div);
+                circle.openPopup();
+            });
+        } else {
+            data.value[1].forEach(sourceCountryGroup => {
+                const sourceCountry = sourceCountryGroup.key;
+                if(sourceCountry in countriesLatLng){
+                    const latlngSource = countriesLatLng[sourceCountry];
+                    L.polyline([latlngSource, latlng], {
+                        color: color,
+                        renderer: canvas,
+                        weight: radiusCircle / 2,
+                        opacity: 0.5,
+                    }).addTo(map);
+                }
+            })
+        }
         circle.addTo(map);
     })
 }
@@ -247,7 +264,7 @@ function renderMainCanvas(force = false, doBefore = startLoadingScreen, doAfter 
             groupingFunction = coord => round(coord, 1 / (2 ** currentClusteringLevel));
         }
         getFilteredEvents((filteredEvents) => {
-                drawData(filteredEvents, groupingFunction, mainCanvas, "red");
+                drawData(filteredEvents, groupingFunction, mainCanvas, "red", true);
                 if (doAfter !== undefined) {
                     doAfter();
                     if (firstLoad) {
@@ -283,7 +300,7 @@ function renderOverCanvas(filterFun, callback) {
     overCanvas = L.canvas();
     getFilteredEvents((filteredEvents) => {
         sourceTargetFilteredEvents = selectedCountryEvents.filter(filterFun);
-        drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue");
+        drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue", false);
         callback(null);
     });
 }

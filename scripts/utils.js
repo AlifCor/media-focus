@@ -18,3 +18,7 @@ function round(value, step) {
     var inv = 1.0 / step;
     return Math.round(value * inv) / inv;
 }
+
+function isANumber(number){
+    return !isNaN(number);
+}

@@ -91,6 +91,7 @@ function updateSankey() {
                         row[targetCol] === d.target.name.split("_")[0] &&
                         row[selCountryCol] === selectedCountry, callback);
                 }
+
                 if(d.type === sankeyLinkEnum.COUNTRY_TO_EVENT){
                     queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL, EVENT_COUNTRY_COL);
                 } else if(d.type === sankeyLinkEnum.EVENT_TO_SEL_COUNTRY){
@@ -99,6 +100,16 @@ function updateSankey() {
                     queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL, SOURCE_COUNTRY_COL);
                 } else if(d.type === sankeyLinkEnum.EVENT_TO_COUNTRY){
                     queueHovering.defer(hoverShowMap, QUAD_CLASS_COL, EVENT_COUNTRY_COL, SOURCE_COUNTRY_COL);
+                }
+
+                if(d.source.name.split("_").length === 2){
+                    // Is a selected country -> event type link
+                } else if(d.target.name.split("_").length === 2){
+                    // Is a event type -> selected country link
+                } else if(isANumber(d.source.name)){
+                    // Is a event type -> country link
+                } else {
+                    // Is a country -> event type link
                 }
             }
 

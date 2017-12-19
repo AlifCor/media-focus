@@ -198,7 +198,6 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                     .call(yAxis);
 
                 let legend = svg.append("g")
-                    .attr("fill", "white")
                     .attr("font-family", "sans-serif")
                     .attr("font-size", 10)
                     .attr("height", 10)

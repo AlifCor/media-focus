@@ -130,6 +130,71 @@ function updateSankey() {
                 queueHovering.defer(removeOverCanvas);
             }
 
+            function handleMouseOverNode(d){
+                let self = this;
+                function hoverShowMap(callback){
+                    d3.select(self).style(
+                        "fill", "blue",
+                    );
+                    let filterFun = row => false;
+
+                    if(currentSankeyGraph.type === "target"){
+                        // Upper graph node is hovered
+                        if(isNaN(d.name) && d.name.split("_").length === 1){
+                            // Country node is hovered
+                            if(d.name === "other"){
+                                filterFun = row =>
+                                    currentSankeyGraph.mostRepresentativeCountries.indexOf(row[SOURCE_COUNTRY_COL]) === -1 &&
+                                    row[EVENT_COUNTRY_COL] === selectedCountry;
+                            } else {
+                                filterFun = row => row[SOURCE_COUNTRY_COL] === d.name
+                                    && row[EVENT_COUNTRY_COL] === selectedCountry;
+                            }
+
+                        } else if(!isNaN(d.name)){
+                            // Quad Class node is hovered
+                            filterFun = row => row[QUAD_CLASS_COL] === d.name &&
+                                row[EVENT_COUNTRY_COL] === selectedCountry;
+                        }
+                    } else {
+                        // Lower (source) graph is hovered
+                        if(isNaN(d.name) && d.name.split("_").length === 1){
+                            // Country node is hovered
+                            if(d.name === "other"){
+                                filterFun = row =>
+                                    currentSankeyGraph.mostRepresentativeCountries.indexOf(row[EVENT_COUNTRY_COL]) === -1 &&
+                                    row[SOURCE_COUNTRY_COL] === selectedCountry;
+                            } else {
+                                filterFun = row => row[EVENT_COUNTRY_COL] === d.name &&
+                                    row[SOURCE_COUNTRY_COL] === selectedCountry;
+                            }
+
+                        } else if(!isNaN(d.name)){
+                            // Quand Class node is hovered
+                            filterFun = row => row[QUAD_CLASS_COL] === d.name &&
+                                row[SOURCE_COUNTRY_COL] === selectedCountry;
+                        }
+                    }
+                    renderOverCanvas(filterFun, callback);
+                }
+
+                queueHovering.defer(hoverShowMap);
+            }
+
+            function handleMouseOutNode(d){
+                let self = this;
+                function removeOverCanvas(callback){
+                    console.log("out")
+                    d3.select(self).style(
+                        "fill", color(d.humanName)
+                    );
+                    console.log
+                    overCanvas.removeFrom(map);
+                    callback(null);
+                }
+                queueHovering.defer(removeOverCanvas);
+            }
+
             function handleClickLink(d) {
                 let country = d.target.name;
                 map.fitBounds(boundingCountries[country]);
@@ -188,10 +253,11 @@ function updateSankey() {
                 .attr("width", function (d) {
                     return d.x1 - d.x0;
                 })
-
                 .style("stroke", "#000")
                 .style("fill", function(d) {
     		        return color(d.humanName); })
+                .on("mouseover", handleMouseOverNode)
+                .on("mouseout", handleMouseOutNode);
 
             node.append("text")
                 .attr("x", function (d) {
@@ -330,6 +396,7 @@ function renderSankey() {
                 nodes: nodesAll,
                 links: linksAll,
                 mostRepresentativeCountries: mostRepresentativeCountries,
+                type: which,
             };
         }
 

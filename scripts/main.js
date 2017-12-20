@@ -159,7 +159,7 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 let xScale = d3.scaleLinear().rangeRound([0, width]);
                 let yScale = d3.scaleBand().rangeRound([height, 0]).padding(0.1);
                 let color = d3.scaleOrdinal(d3.schemeCategory20);
-                //console.log(eventsNestedQuadClass)
+                console.log(eventsNestedQuadClass)
                 let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
                 let xAxis = d3.axisBottom(xScale).ticks(maxTotal >= 5 ? 5 : maxTotal);
                 let yAxis = d3.axisLeft(yScale);

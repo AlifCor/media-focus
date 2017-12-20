@@ -277,8 +277,28 @@
   fill: brown;
 }
 
+.axis--x line {
+    stroke: white;
+}
+
 .axis--x path {
-  display: none;
+  stroke: white;
+}
+
+.axis--x text{
+  fill: white;
+}
+
+.axis--y line {
+    stroke: white;
+}
+
+.axis--y path {
+  stroke: white;
+}
+
+.axis--y text{
+  fill: white;
 }
 
 .leaflet-popup-content-wrapper {

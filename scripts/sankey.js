@@ -88,8 +88,6 @@ function updateSankey() {
                             row[EVENT_COUNTRY_COL] === selectedCountry;
                     } else if(!isNaN(d.source.name)){
                         // Is a event type -> country link
-                        console.log("Event type -> country")
-                        console.log(d.target.name)
                         let filterTargetCountry;
                         if(d.target.name === "other"){
                             filterTargetCountry = row =>
@@ -121,15 +119,15 @@ function updateSankey() {
             }
 
             function handleMouseOutLink(d) {
-                d3.select(this).attr(
-                    "stroke", "#000",
-                );
+                let self = this;
                 function removeOverCanvas(callback){
+                    d3.select(self).attr(
+                        "stroke", "#000",
+                    );
                     overCanvas.removeFrom(map);
                     callback(null);
                 }
-                queueHovering
-                    .defer(removeOverCanvas);
+                queueHovering.defer(removeOverCanvas);
             }
 
             function handleClickLink(d) {

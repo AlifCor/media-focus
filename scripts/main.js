@@ -159,13 +159,14 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 let xScale = d3.scaleLinear().rangeRound([0, width]);
                 let yScale = d3.scaleBand().rangeRound([height, 0]).padding(0.1);
                 let color = d3.scaleOrdinal(d3.schemeCategory20);
-                let xAxis = d3.axisBottom(xScale).ticks(5);
+                //console.log(eventsNestedQuadClass)
+                let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
+                let xAxis = d3.axisBottom(xScale).ticks(maxTotal >= 5 ? 5 : maxTotal);
                 let yAxis = d3.axisLeft(yScale);
 
                 let stack = d3.stack().keys(QUAD_CLASS_KEYS).offset(d3.stackOffsetNone);
                 let layers = stack(eventsNestedQuadClass);
                 yScale.domain(eventsNestedQuadClass.map(d => d["country"]));
-                let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
                 xScale.domain([0, maxTotal]).nice();
 
                 let layer = g.selectAll(".layer")
@@ -298,15 +299,12 @@ function renderOverCanvas(filterFun, callback) {
     overCanvas = L.canvas();
     getFilteredEvents((filteredEvents) => {
         sourceTargetFilteredEvents = filteredEvents.filter(filterFun);
-        console.log(sourceTargetFilteredEvents.length)
-        console.log(sourceTargetFilteredEvents[Math.floor(Math.random()*sourceTargetFilteredEvents.length)])
         drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue", false);
         callback(null);
     });
 }
 
 function showCountryDetails(countryCode) {
-    console.log(countryCode)
     selectedCountry = countryCode;
     sideCountryDetails.css("margin-left", "0");
     renderSankey();

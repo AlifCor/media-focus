@@ -44,7 +44,6 @@ let currentClusteringLevel = -1;
 let countriesLatLng = {};
 
 let selectedCountry = undefined;
-let selectedCountryEvents = [];
 
 $(() => {
 
@@ -298,7 +297,9 @@ function renderOverCanvas(filterFun, callback) {
     overCanvas.removeFrom(map);
     overCanvas = L.canvas();
     getFilteredEvents((filteredEvents) => {
-        sourceTargetFilteredEvents = selectedCountryEvents.filter(filterFun);
+        sourceTargetFilteredEvents = filteredEvents.filter(filterFun);
+        console.log(sourceTargetFilteredEvents.length)
+        console.log(sourceTargetFilteredEvents[Math.floor(Math.random()*sourceTargetFilteredEvents.length)])
         drawData(sourceTargetFilteredEvents, coord => coord, overCanvas, "blue", false);
         callback(null);
     });

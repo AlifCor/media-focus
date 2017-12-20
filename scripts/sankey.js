@@ -1,14 +1,6 @@
 // We take the most representative countries and put the rest into "others"
 const COUNTRIES_TRUNCATE = 8;
 
-// We want to remember the types of sankey links
-const sankeyLinkEnum = {
-    COUNTRY_TO_EVENT: 0,
-    EVENT_TO_COUNTRY: 1,
-    SEL_COUNTRY_TO_EVENT: 2,
-    EVENT_TO_SEL_COUNTRY: 3,
-}
-
 let currentSankeyTargetGraph = {
     nodes: [],
     links: [],
@@ -79,38 +71,53 @@ function updateSankey() {
                 .extent([[1, 1], [width - 1, height - 6]]);
 
             function handleMouseOverLink(d) {
-                d3.select(this).attr(
-                    "stroke", "blue",
-                );
-                /*console.log(d.source.name)
-                if(d.source.name === "other"){
-                    console.log(JSON.stringify(currentSankeyGraph.mostRepresentativeCountries))
-                }*/
-                function hoverShowMap(sourceCol, targetCol, selCountryCol, callback){
-                    renderOverCanvas(row => row[sourceCol] === d.source.name.split("_")[0] &&
-                        row[targetCol] === d.target.name.split("_")[0] &&
-                        row[selCountryCol] === selectedCountry, callback);
+                let self = this;
+                function hoverShowMap(callback){
+                    d3.select(self).attr(
+                        "stroke", "blue",
+                    );
+                    let filterFun;
+
+                    if(d.source.name.split("_").length === 2){
+                        // Is a selected country -> event type link
+                        filterFun = row => row[SOURCE_COUNTRY_COL] === selectedCountry &&
+                            row[QUAD_CLASS_COL] === d.target.name;
+                    } else if(d.target.name.split("_").length === 2){
+                        // Is a event type -> selected country link
+                        filterFun = row => row[QUAD_CLASS_COL] === d.source.name &&
+                            row[EVENT_COUNTRY_COL] === selectedCountry;
+                    } else if(!isNaN(d.source.name)){
+                        // Is a event type -> country link
+                        console.log("Event type -> country")
+                        console.log(d.target.name)
+                        let filterTargetCountry;
+                        if(d.target.name === "other"){
+                            filterTargetCountry = row =>
+                                currentSankeyGraph.mostRepresentativeCountries.indexOf(row[EVENT_COUNTRY_COL]) === -1;
+                        } else {
+                            filterTargetCountry = row => row[EVENT_COUNTRY_COL] === d.target.name;
+                        }
+                        filterFun = row => row[QUAD_CLASS_COL] === d.source.name &&
+                            row[SOURCE_COUNTRY_COL] === selectedCountry &&
+                            filterTargetCountry(row);
+
+                    } else {
+                        // Is a country -> event type link
+                        let filterSourceCountry;
+                        if(d.source.name === "other"){
+                            filterSourceCountry = row =>
+                                currentSankeyGraph.mostRepresentativeCountries.indexOf(row[SOURCE_COUNTRY_COL]) === -1
+                        } else {
+                            filterSourceCountry = row => row[SOURCE_COUNTRY_COL] === d.source.name;
+                        }
+                        filterFun = row => row[QUAD_CLASS_COL] === d.target.name &&
+                            row[EVENT_COUNTRY_COL] === selectedCountry &&
+                            filterSourceCountry(row);
+                    }
+                    renderOverCanvas(filterFun, callback);
                 }
 
-                if(d.type === sankeyLinkEnum.COUNTRY_TO_EVENT){
-                    queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL, EVENT_COUNTRY_COL);
-                } else if(d.type === sankeyLinkEnum.EVENT_TO_SEL_COUNTRY){
-                    queueHovering.defer(hoverShowMap, QUAD_CLASS_COL, EVENT_COUNTRY_COL, EVENT_COUNTRY_COL);
-                } else if(d.type === sankeyLinkEnum.SEL_COUNTRY_TO_EVENT){
-                    queueHovering.defer(hoverShowMap, SOURCE_COUNTRY_COL, QUAD_CLASS_COL, SOURCE_COUNTRY_COL);
-                } else if(d.type === sankeyLinkEnum.EVENT_TO_COUNTRY){
-                    queueHovering.defer(hoverShowMap, QUAD_CLASS_COL, EVENT_COUNTRY_COL, SOURCE_COUNTRY_COL);
-                }
-
-                if(d.source.name.split("_").length === 2){
-                    // Is a selected country -> event type link
-                } else if(d.target.name.split("_").length === 2){
-                    // Is a event type -> selected country link
-                } else if(isANumber(d.source.name)){
-                    // Is a event type -> country link
-                } else {
-                    // Is a country -> event type link
-                }
+                queueHovering.defer(hoverShowMap);
             }
 
             function handleMouseOutLink(d) {
@@ -229,8 +236,6 @@ function renderSankey() {
         });
     });
     getFilteredEvents(data => {
-        selectedCountryEvents = data.filter(d => d[EVENT_COUNTRY_COL] === selectedCountry ||
-            d[SOURCE_COUNTRY_COL] === selectedCountry);
         function getSankeyGraph(which) {
             let selectedCountryCol, countriesCol;
             switch (which) {
@@ -243,7 +248,7 @@ function renderSankey() {
                     countriesCol = EVENT_COUNTRY_COL;
                     break;
             }
-            const filteredData = selectedCountryEvents.filter(d => d[selectedCountryCol] === selectedCountry);
+            const filteredData = data.filter(d => d[selectedCountryCol] === selectedCountry).slice();
 
             // This part is for detecting which countries are the most representative
 
@@ -295,16 +300,12 @@ function renderSankey() {
                 return mapping;
             }, {});
 
-            //nodesAll = nodesCountries.concat(nodesEvents).concat(finalNode)
-            //    .map(val => ({name: getNameFromCode(val.split("_")[0].trim()) }));
-
             const linksCountriesEvents = grouped_bis.map(link => {
                 const pair = link.key.split("#");
                 return {
                     source: nodesMapping[pair[0]],
                     target: nodesMapping[pair[1]],
                     value: link.value,
-                    type: which === "target" ? sankeyLinkEnum.COUNTRY_TO_EVENT : sankeyLinkEnum.EVENT_TO_COUNTRY,
                 };
             });
 
@@ -315,14 +316,12 @@ function renderSankey() {
                         source: nodesMapping[quadClass],
                         target: nodesMapping[selectedCountry + "_target"],
                         value: link.value,
-                        type: sankeyLinkEnum.EVENT_TO_SEL_COUNTRY,
                     };
                 } else {
                     return {
                         source: nodesMapping[selectedCountry + "_source"],
                         target: nodesMapping[quadClass],
                         value: link.value,
-                        type: sankeyLinkEnum.SEL_COUNTRY_TO_EVENT,
                     }
                 }
             });
@@ -341,50 +340,6 @@ function renderSankey() {
 
         updateSankey(currentSankeyTargetGraph);
         updateSankey(currentSankeySourceGraph);
-
-        /*
-        var grouped = groupBy(filteredData, elem => elem[QUAD_CLASS_COL] + '#' + elem[SOURCE_COUNTRY_COL]);
-        var grouped2 = groupBy(filteredData, elem => elem[QUAD_CLASS_COL]);
-        grouped.forEach((group) => {
-          const val = group.length
-          const source = group[0][SOURCE_COUNTRY_COL]
-          const type = group[0][QUAD_CLASS_COL] + " "
-
-          if (!(source in node_names)){
-            node_names.push(source)
-            nodes.push({id: node_names.length - 1, name: source})
-          }
-          if (!(type in node_names)){
-            node_names.push(type)
-            nodes.push({id: node_names.length - 1, name: type})
-          }
-          source_id = node_names.indexOf(source)
-          type_id = node_names.indexOf(type)
-          link_values.push({source: source_id, target: type_id, value: val})
-
-        });
-        grouped2.forEach((group) => {
-            const val = group.length
-            const source = group[0][QUAD_CLASS_COL] + " "
-            const type = selectedCountry+" "
-
-            if (!(source in node_names)){
-              node_names.push(source)
-              nodes.push({id: node_names.length - 1, name: source})
-            }
-            if (!(type in node_names)){
-              node_names.push(type)
-              nodes.push({id: node_names.length - 1, name: type})
-            }
-            source_id = node_names.indexOf(source)
-
-            type_id = node_names.indexOf(type)
-            link_values.push({source: source_id, target: type_id, value: val})
-
-          });
-        let links = link_values;
-        */
-
     })
 }
 

@@ -293,12 +293,6 @@ function updateSankey() {
 }
 
 function renderSankey() {
-    mapping_cc = []
-    getMapping(data => {
-        data.map(country => {
-            mapping_cc[country.Code] = country.Name.trim()
-        });
-    });
     getFilteredEvents(data => {
         function getSankeyGraph(which) {
             let selectedCountryCol, countriesCol;

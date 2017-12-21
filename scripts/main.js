@@ -25,6 +25,12 @@ const getFilteredEvents = (function () {
 function getMapping(callback) {
     d3.csv("mapping_code_name.csv", (data) => callback(data));
 }
+mapping_cc = []
+getMapping(data => {
+    data.map(country => {
+        mapping_cc[country.Code] = country.Name.trim()
+    });
+});
 
 // Constants:
 const SOURCE_COUNTRY_COL = "source_country_code";
@@ -112,6 +118,7 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
             radius: radiusCircle,
         });
         if(circleClickable){
+
             circle.on('mouseover', function () {
                 circle.setStyle({fillOpacity: 0.5});
             });
@@ -121,6 +128,9 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 circle.setStyle({fillOpacity: 0.2});
             });
             circle.on("click", () => {
+                const cameoDict = cameoData
+                    .filter(row => row["CAMEOEVENTCODE"].length === 2)
+                    .map(row => row["EVENTDESCRIPTION"]);
                 const neededEvents = groupedBySourceCountry
                     .sort((a, b) => b.values.length - a.values.length)
                     .slice(0, 6);
@@ -184,7 +194,9 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                     .data(layers)
                     .enter().append("g")
                     .attr("class", "layer")
-                    .style("fill", (d, i) => color(i));
+                    .style("fill", (d, i) => color(i))
+                    .on("mouseover", mouseOverSBCReact)
+                    .on("mouseout", mouseOutSBCReact);
 
                 /*
                 let hoverTitles =
@@ -198,6 +210,16 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                         return i;
                     });
                 */
+                // SBC = Stacked bar chart
+                function mouseOverSBCReact(){
+                    d3.select(this)
+                        .style("border", "2px solid black");
+                }
+
+                function mouseOutSBCReact(){
+                    d3.select(this)
+                        .style("border", "none");
+                }
 
                 layer.selectAll("rect")
                     .data(d => d)
@@ -206,17 +228,37 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                     .attr("x", d => xScale(d[0]))
                     .attr("height", yScale.bandwidth())
                     .attr("width", d => xScale(d[1]) - xScale(d[0]))
+
+
                     .append("title")
                     .text(function (d, i) {
                         // const filteredCountryQC = data.values.filter(row =>
                         //    row[SOURCE_COUNTRY_COL] === d.data["country"])
-                        console.log("DATA d", d)
-                        const quadClassEvents = QUAD_CLASS_KEYS.map(name => d.data[name]);
+                        const quadClassEventsStacked = QUAD_CLASS_KEYS.reduce((stacked, humanQuadClass) => {
+                            const toAdd = d.data[humanQuadClass];
+                            if(stacked.length > 0){
+                                stacked.push(stacked[stacked.length - 1] + toAdd);
+                            } else {
+                                stacked.push(toAdd);
+                            }
+                            return stacked;
+                        }, []);
 
-                        console.log(quadClassEvents)
+                        const quadClass = (quadClassEventsStacked.indexOf(d[1]) + 1).toString();
                         const filteredCountryQC = data.values.filter(row =>
-                            true)
-                        return d[1] + ", " + i;
+                            row[QUAD_CLASS_COL] === quadClass && row[SOURCE_COUNTRY_COL] === d.data["country"]);
+                        const groupedByRootEvent = d3.nest()
+                            .key(d => d[EVENT_CODE_TYPE])
+                            .rollup(group => group.length)
+                            .entries(filteredCountryQC);
+                        const info = groupedByRootEvent
+                            .sort((a, b) => a.key - b.key)
+                            .map(group => cameoDict[group.key] + " : " + group.value + " news")
+                            .join("\n");
+                        const ctry = d.data["country"];
+                        return (ctry in mapping_cc ? mapping_cc[ctry] : ctry) + "-" +
+                            QUAD_CLASS_KEYS[quadClass] + "\n" +
+                            info;
                     });
 
                 g.append("g")

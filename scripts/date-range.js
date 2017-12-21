@@ -1,9 +1,8 @@
 $(() => {
     const containerMap = $("#container_map");
     const bottomMenu = $("#bottom_menu");
-    const today = new Date(), yesterday = new Date(), past = new Date();
+    const today = new Date(2017, 11, 19), yesterday = new Date(), past = new Date(2017, 10, 20);
     yesterday.setDate(today.getDate() - 1);
-    past.setDate(today.getDate() - 30);
 
     $("#slider").dateRangeSlider({
         arrows: false,

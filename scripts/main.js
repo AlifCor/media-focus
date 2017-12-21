@@ -1,16 +1,23 @@
+let currentDate = new Date(2017, 11, 19);
+
 const getFilteredEvents = (function () {
     let selectedEvents;
     $(() => $("#accordion").on("changed", (event, selectedCodes) => selectedEvents = selectedCodes));
 
     return function (callback) {
+        const dateFilename = "data_processing/data/" +
+            currentDate.getFullYear() + "" +
+            (currentDate.getMonth() + 1) + "" +
+            currentDate.getDate() + ".csv";
         if (selectedEvents !== undefined) {
             const filteringLevel = selectedEvents.values().next().length;
 
-            d3.csv("data_cleaned.csv", data => callback(data.filter(el => selectedEvents.has(el["EventCode"].substr(0, filteringLevel)))));
+            d3.csv(dateFilename, data => callback(data.filter(el => selectedEvents.has(el["EventCode"].substr(0, filteringLevel)))));
+
         }
         else {
             //The user never changed the selection inside the drawer => return all data
-            d3.csv("data_cleaned.csv", data => callback(data));
+            d3.csv(dateFilename, data => callback(data));
         }
     }
 }());
@@ -65,7 +72,8 @@ $(() => {
     });
 
     $("#slider").bind("valuesChanged", function(e, data){
-        console.log("Values just changed. min: " + data.values.min + " max: " + data.values.max);
+        currentDate = new Date(data.values.min);
+        renderMainCanvas(force = true);
     });
 
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
@@ -87,16 +95,16 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
 
     const grouped = d3.nest()
         .key(d => [groupingFunction(d[LAT_COL]), groupingFunction(d[LONG_COL])])
-        .rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group),
-            d3.nest().key(d => d[SOURCE_COUNTRY_COL]).key(d => d["QuadClass"]).entries(group),
-            [meand3(group, LAT_COL), meand3(group, LONG_COL)]])
+        //.rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group),
+        //    [meand3(group, LAT_COL), meand3(group, LONG_COL)]])
         .entries(dataToShow);
     const currentZoom = map.getZoom();
     grouped.forEach((data, index) => {
-        const meanCoord = data.value[3];
+        const meanCoord = [meand3(data.values, LAT_COL), meand3(data.values, LONG_COL)];
+        const groupedBySourceCountry = d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(data.values);
         const latlngArray = data.key.split(",");
         const latlng = new L.LatLng(meanCoord[0], meanCoord[1]);
-        const radiusCircle = (Math.sqrt(data.value[0]) + 1) * CIRCLE_RADIUS_FACTOR * 2 ** (CLUSTER_STEP * 0.8 * currentClusteringLevel);
+        const radiusCircle = (Math.sqrt(data.values.length) + 1) * CIRCLE_RADIUS_FACTOR * 2 ** (CLUSTER_STEP * 0.8 * currentClusteringLevel);
         let circle = L.circleMarker(latlng, {
             renderer: canvas,
             stroke: false,
@@ -113,9 +121,10 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 circle.setStyle({fillOpacity: 0.2});
             });
             circle.on("click", () => {
-                const neededEvents = data.value[1]
+                const neededEvents = groupedBySourceCountry
                     .sort((a, b) => b.values.length - a.values.length)
                     .slice(0, 6);
+
                 const eventsNestedQuadClass = neededEvents.map(country => {
                     const tempNest = d3.nest()
                         .key(d => d[QUAD_CLASS_COL])
@@ -169,11 +178,26 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 yScale.domain(eventsNestedQuadClass.map(d => d["country"]));
                 xScale.domain([0, maxTotal]).nice();
 
+                console.log("LAYERS", layers)
+
                 let layer = g.selectAll(".layer")
                     .data(layers)
                     .enter().append("g")
                     .attr("class", "layer")
                     .style("fill", (d, i) => color(i));
+
+                /*
+                let hoverTitles =
+                    layer.append("title")
+                    .text(function (d, i) {
+                        //const filteredCountryQC = data.values.filter(row =>
+                        //    row[SOURCE_COUNTRY_COL] === d.data["country"])
+                        console.log("DATA d", d)
+                        const filteredCountryQC = data.values.filter(row =>
+                            true)
+                        return i;
+                    });
+                */
 
                 layer.selectAll("rect")
                     .data(d => d)
@@ -183,9 +207,15 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                     .attr("height", yScale.bandwidth())
                     .attr("width", d => xScale(d[1]) - xScale(d[0]))
                     .append("title")
-                    .text(function (d) {
-                        return d.data["country"]
+                    .text(function (d, i) {
+                        //const filteredCountryQC = data.values.filter(row =>
+                        //    row[SOURCE_COUNTRY_COL] === d.data["country"])
+                        console.log("DATA d", d)
+                        const filteredCountryQC = data.values.filter(row =>
+                            true)
+                        return i;
                     });
+
 
                 g.append("g")
                     .attr("class", "axis axis--x")
@@ -225,7 +255,7 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 circle.openPopup();
             });
         } else {
-            data.value[1].forEach(sourceCountryGroup => {
+            groupedBySourceCountry.forEach(sourceCountryGroup => {
                 const sourceCountry = sourceCountryGroup.key;
                 if(sourceCountry in countriesLatLng){
                     const latlngSource = countriesLatLng[sourceCountry];

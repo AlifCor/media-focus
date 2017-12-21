@@ -208,14 +208,16 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                     .attr("width", d => xScale(d[1]) - xScale(d[0]))
                     .append("title")
                     .text(function (d, i) {
-                        //const filteredCountryQC = data.values.filter(row =>
+                        // const filteredCountryQC = data.values.filter(row =>
                         //    row[SOURCE_COUNTRY_COL] === d.data["country"])
                         console.log("DATA d", d)
+                        const quadClassEvents = QUAD_CLASS_KEYS.map(name => d.data[name]);
+
+                        console.log(quadClassEvents)
                         const filteredCountryQC = data.values.filter(row =>
                             true)
-                        return i;
+                        return d[1] + ", " + i;
                     });
-
 
                 g.append("g")
                     .attr("class", "axis axis--x")

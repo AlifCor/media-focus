@@ -146,27 +146,21 @@ $(() => {
     let tutoContainer = $("#tuto_container");
     let shortcutsContainer = $("#shortcuts_container");
 
-    /*
+
     setTimeout(() => {
-
-        tutoContainer.css("display", "block");
-        tutoContainer.animate({opacity: 1}, 1000, () => {
+        tutoContainer.fadeIn(1000, () => {
             setTimeout(() => {
-                tutoContainer.animate({opacity: 0}, 1000, () => tutoContainer.css("display", "none"));
-            }, 5000)
-
-        })
+                tutoContainer.fadeOut(1000)
+            }, 5000)});
     }, 3000);
 
-    */
     setTimeout(() => {
-        shortcutsContainer.css("display", "block");
-        shortcutsContainer.animate({opacity: 0.6}, 1000, () => {
+        shortcutsContainer.fadeIn(1000, () => {
             setTimeout(() => {
-                shortcutsContainer.animate({opacity: 0}, 1000, () => shortcutsContainer.css("display", "none"));
-            }, 10000)
+                shortcutsContainer.fadeOut(1000);
+            }, 10000);
         });
-    }, 5000);
+    }, 6000);
 
 });
 
@@ -437,6 +431,21 @@ function showCountryDetails(countryCode) {
     selectedCountry = countryCode;
     sideCountryDetails.css("margin-left", "0");
     renderSankey();
+    const sankeyTitle1 = $("#sankey_title_1");
+    const sankeyTitle2 = $("#sankey_title_2");
+    if(alreadyOpened.sankey){
+        sankeyTitle1.css("display", "block");
+        sankeyTitle2.css("display", "block");
+    } else {
+        setTimeout(() => {
+            sankeyTitle1.animate({opacity: 1}, 1000);
+        }, 3000);
+
+        setTimeout(() => {
+            sankeyTitle2.animate({opacity: 1}, 1000);
+        }, 8000);
+    }
+
 }
 
 function closeCountryDetails() {

@@ -220,7 +220,6 @@
 #container_sankey_countries {
     position: relative;
     margin: auto;
-    margin-top: 5%;
     height: 40%;
     margin-left: 10%;
     width: 80%;
@@ -229,11 +228,17 @@
 
 #container_sankey_events {
     position: relative;
-    margin: auto;
     height: 40%;
     margin-left: 10%;
     width: 80%;
     margin-right: 10%;
+}
+
+.sankey_title {
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 6%;
+    font-size: 12px;
 }
 
 #switch {
@@ -288,6 +293,7 @@
     left: 50%;
     top: 70%;
     transform: translate(-50%, -50%);
+    display: none;
     opacity: 0;
 }
 

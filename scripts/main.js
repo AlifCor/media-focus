@@ -9,6 +9,10 @@ const EVENT_CODE_TYPE = "EventRootCode";
 const LAT_COL = "ActionGeo_Lat";
 const LONG_COL = "ActionGeo_Long";
 
+let alreadyOpened = {
+    sankey: false,
+}
+
 const getFilteredEvents = (function () {
     let selectedEvents;
     $(() => $("#accordion").on("changed", (event, selectedCodes) => {
@@ -142,6 +146,7 @@ $(() => {
     let tutoContainer = $("#tuto_container");
     let shortcutsContainer = $("#shortcuts_container");
 
+    /*
     setTimeout(() => {
 
         tutoContainer.css("display", "block");
@@ -153,9 +158,14 @@ $(() => {
         })
     }, 3000);
 
+    */
     setTimeout(() => {
         shortcutsContainer.css("display", "block");
-        shortcutsContainer.animate({opacity: 0.6}, 1000);
+        shortcutsContainer.animate({opacity: 0.6}, 1000, () => {
+            setTimeout(() => {
+                shortcutsContainer.animate({opacity: 0}, 1000, () => shortcutsContainer.css("display", "none"));
+            }, 10000)
+        });
     }, 5000);
 
 });
@@ -303,8 +313,7 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                             .map(group => cameoDict[group.key] + " : " + group.value + " news")
                             .join("\n");
                         const ctry = d.data["country"];
-                        return (ctry in mapping_cc ? mapping_cc[ctry] : ctry) + "-" +
-                            QUAD_CLASS_KEYS[quadClass] + "\n" +
+                        return (ctry in mapping_cc ? mapping_cc[ctry] : ctry) +"\n" +
                             info;
                     });
 

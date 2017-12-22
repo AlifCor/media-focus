@@ -51,6 +51,8 @@ function updateSankey() {
         let selectionSankeyContainer = d3.select(idContainer);
         selectionSankeyContainer.selectAll("svg > *").remove();
 
+        const switchSankey = idContainer.split("_")[2];
+
         if(currentSankeyGraph.nodes.length > 1){
             let bboxSankeyContainer = selectionSankeyContainer.node().getBoundingClientRect();
 
@@ -293,6 +295,17 @@ function updateSankey() {
                 .text(function (d) {
                     return d.humanName + "\n" + format(d.value);
                 });
+            if(switchSankey === "countries"){
+                $("#sankey_title_1").html("The sankey diagram below shows what kind of event happened in the selected country and which countries talk about it.");
+            } else {
+                $("#sankey_title_2").html("The sankey diagram below shows what kind of event the news in the selected country talk about, and in which country they happened.");
+            }
+        } else {
+            if(switchSankey === "countries"){
+                $("#sankey_title_1").html("No data to show");
+            } else {
+                $("#sankey_title_2").html("No data to show");
+            }
         }
 
     }

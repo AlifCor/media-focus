@@ -1,4 +1,14 @@
 let allDates = [new Date(2017, 11, 19)];
+
+// Constants:
+const SOURCE_COUNTRY_COL = "source_country_code";
+const QUAD_CLASS_COL = "QuadClass";
+const QUAD_CLASS_KEYS = ["Verbal Cooperation", "Material Cooperation", "Verbal Conflict", "Material Conflict"];
+const EVENT_COUNTRY_COL = "country_code_alpha";
+const EVENT_CODE_TYPE = "EventRootCode";
+const LAT_COL = "ActionGeo_Lat";
+const LONG_COL = "ActionGeo_Long";
+
 const getFilteredEvents = (function () {
     let selectedEvents;
     $(() => $("#accordion").on("changed", (event, selectedCodes) => {
@@ -40,13 +50,12 @@ const getFilteredEvents = (function () {
         // This function is used to get the 0-padded event codes out of our
         // integer event codes in our data. For example, if the event code is
         // 034 our data will have only 34 so we want to pad it to be "034"
-        function eventCodePadding(eventCode, filteringLevel){
-            const shapedEventCode = eventCode.substr(0, 3);
-            if(shapedEventCode.length <= filteringLevel){
-                return ("0".repeat(3 - shapedEventCode.length) + shapedEventCode).substr(0, filteringLevel);
-            } else {
-                return shapedEventCode.substr(0, filteringLevel);
+        function eventCodePadding(eventCode, filteringLevel, rootEventCode){
+            let shapedEventCode = eventCode;
+            if(parseInt(rootEventCode) < 10){
+                shapedEventCode =  "0" + eventCode;
             }
+            return shapedEventCode.substr(0, filteringLevel);
         }
 
         if (selectedEvents !== undefined) {
@@ -56,9 +65,9 @@ const getFilteredEvents = (function () {
                 getAllData(data => {
                     const testData = data.slice(0, 100);
                     console.log(testData)
-                    const testDataFiltered = testData.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel)))
+                    const testDataFiltered = testData.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel, el[EVENT_CODE_TYPE])))
                     console.log(testDataFiltered)
-                    callback(data.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel))))
+                    callback(data.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel, el[EVENT_CODE_TYPE]))))
                 });
             }
         }
@@ -78,15 +87,6 @@ getMapping(data => {
         mapping_cc[country.Code] = country.Name.trim()
     });
 });
-
-// Constants:
-const SOURCE_COUNTRY_COL = "source_country_code";
-const QUAD_CLASS_COL = "QuadClass";
-const QUAD_CLASS_KEYS = ["Verbal Cooperation", "Material Cooperation", "Verbal Conflict", "Material Conflict"];
-const EVENT_COUNTRY_COL = "country_code_alpha";
-const EVENT_CODE_TYPE = "EventRootCode";
-const LAT_COL = "ActionGeo_Lat";
-const LONG_COL = "ActionGeo_Long";
 
 const MAX_ZOOM = 18;
 const CLUSTER_DEGREE = 8;

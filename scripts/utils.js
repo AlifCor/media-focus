@@ -15,10 +15,16 @@ function upperFirstLetters(str) {
 
 function round(value, step) {
     step || (step = 1.0);
-    var inv = 1.0 / step;
+    const inv = 1.0 / step;
     return Math.round(value * inv) / inv;
 }
 
-function isANumber(number){
+function isANumber(number) {
     return !isNaN(number);
+}
+
+function areSameDates(date1, date2) {
+    return (date1.getFullYear() === date2.getFullYear()) &&
+        (date1.getMonth() === date2.getMonth()) &&
+        (date1.getDate() === date2.getDate());
 }

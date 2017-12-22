@@ -106,9 +106,6 @@ let countriesLatLng = {};
 let selectedCountry = undefined;
 
 $(() => {
-
-    $('#mydiv').focus();
-
     // We create our Leaflet map
     map = L.map('container_map', {zoomControl: false}).setView([39.74739, -105], 4);
     sideEventsDrawer = $("#side_menu");
@@ -124,9 +121,9 @@ $(() => {
         }
     });
 
-    $("#slider").bind("valuesChanged", function(e, data){
-        const endDate = new Date(data.values.max);
-        let tempDate = new Date(data.values.min);
+    $("#slider").bind("changed", function(e, data){
+        const endDate = new Date(data.max);
+        let tempDate = new Date(data.min);
         allDates = [];
 
         while(tempDate.getDate() !== endDate.getDate()){

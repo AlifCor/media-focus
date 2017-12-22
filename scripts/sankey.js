@@ -124,7 +124,8 @@ function updateSankey() {
                     d3.select(self).attr(
                         "stroke", "#000",
                     );
-                    overCanvas.remove();
+
+                    overCanvas.removeFrom(map);
                     callback(null);
                 }
                 queueHovering.defer(removeOverCanvas);
@@ -188,7 +189,7 @@ function updateSankey() {
                         "fill", color(d.humanName)
                     );
 
-                    //overCanvas.removeFrom(map);
+                    overCanvas.removeFrom(map);
                     callback(null);
                 }
                 queueHovering.defer(removeOverCanvas);

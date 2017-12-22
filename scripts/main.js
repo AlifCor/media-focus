@@ -1,7 +1,10 @@
 let allDates = [new Date(2017, 11, 19)];
 const getFilteredEvents = (function () {
     let selectedEvents;
-    $(() => $("#accordion").on("changed", (event, selectedCodes) => selectedEvents = selectedCodes));
+    $(() => $("#accordion").on("changed", (event, selectedCodes) => {
+        selectedEvents = selectedCodes;
+        console.log(selectedEvents)
+    }));
 
     return function (callback) {
         function filenameFromDate(currentDate){
@@ -15,7 +18,6 @@ const getFilteredEvents = (function () {
             let allData = [];
             function loadFile(filename, callback){
                 d3.csv(filename, (data) => {
-                    console.log("LOADING FOR", filename)
                     allData = allData.concat(data);
                     callback(null);
                 });
@@ -31,16 +33,30 @@ const getFilteredEvents = (function () {
                 if(error){
                     throw error;
                 }
-                console.log(allData.length)
                 callback(allData);
             });
         }
 
+        // This function is used to get the 0-padded event codes out of our
+        // integer event codes in our data. For example, if the event code is
+        // 034 our data will have only 34 so we want to pad it to be "034"
+        function eventCodePadding(eventCode, filteringLevel){
+            result = eventCode;
+            if(eventCode.length <= filteringLevel){
+                return "0".repeat(filteringLevel - eventCode.length) + eventCode;
+            } else {
+                return eventCode.substr(0, filteringLevel);
+            }
+        }
 
         if (selectedEvents !== undefined) {
-            const filteringLevel = selectedEvents.values().next().length;
-
-            getAllData(data => callback(data.filter(el => selectedEvents.has(el["EventCode"].substr(0, filteringLevel)))));
+            if(selectedEvents.size > 0){
+                const filteringLevel = selectedEvents.values().next().value.length;
+                const selectedEventsNonZero = new Set((Array.from(selectedEvents)).map(code => parseInt(code).toString()));
+                console.log(selectedEvents)
+                console.log(filteringLevel)
+                getAllData(data => callback(data.filter(el => selectedEventsNonZero.has(eventCodePadding(el["EventCode"], filteringLevel)))));
+            }
         }
         else {
             //The user never changed the selection inside the drawer => return all data
@@ -113,8 +129,6 @@ $(() => {
             allDates.push(new Date(tempDate));
             tempDate.setDate(tempDate.getDate() + 1);
         }
-
-        console.log("Slider changed: " + allDates)
 
         renderMainCanvas(force = true);
     });

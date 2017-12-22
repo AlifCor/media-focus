@@ -41,11 +41,11 @@ const getFilteredEvents = (function () {
         // integer event codes in our data. For example, if the event code is
         // 034 our data will have only 34 so we want to pad it to be "034"
         function eventCodePadding(eventCode, filteringLevel){
-            result = eventCode;
-            if(eventCode.length <= filteringLevel){
-                return "0".repeat(filteringLevel - eventCode.length) + eventCode;
+            const shapedEventCode = eventCode.substr(0, 3);
+            if(shapedEventCode.length <= filteringLevel){
+                return ("0".repeat(3 - shapedEventCode.length) + shapedEventCode).substr(0, filteringLevel);
             } else {
-                return eventCode.substr(0, filteringLevel);
+                return shapedEventCode.substr(0, filteringLevel);
             }
         }
 
@@ -53,9 +53,13 @@ const getFilteredEvents = (function () {
             if(selectedEvents.size > 0){
                 const filteringLevel = selectedEvents.values().next().value.length;
                 const selectedEventsNonZero = new Set((Array.from(selectedEvents)).map(code => parseInt(code).toString()));
-                console.log(selectedEvents)
-                console.log(filteringLevel)
-                getAllData(data => callback(data.filter(el => selectedEventsNonZero.has(eventCodePadding(el["EventCode"], filteringLevel)))));
+                getAllData(data => {
+                    const testData = data.slice(0, 100);
+                    console.log(testData)
+                    const testDataFiltered = testData.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel)))
+                    console.log(testDataFiltered)
+                    callback(data.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel))))
+                });
             }
         }
         else {

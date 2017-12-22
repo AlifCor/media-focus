@@ -1,5 +1,5 @@
 # Data visualization process book
-In this file we will keep a log of what we do week by week.
+In this file we will keep a log of what we do week by week. The first part of the process book is simply a kind of log of what we do and what we think of week by week. The end contains our answers to the questions from the project indications and also some insightful conclusions.
 
 ## Week 8
 Brainstorming about what kind of project we might do. We thought about combining our project with our ADA project but, unfortunately, we are not in the same group for that course so there was no point doing that. We brainstormed and came up with a few idea until we seemed pretty sure about one specific idea: trying to visualize the news in the World and where the news "come from". For example, we would like to ask some questions like "If we choose one country, which are the countries it talks the most about ?". Or maybe we would also like to know which are the countries that talk the most about this country in their news.
@@ -142,6 +142,7 @@ Our filtering system is pretty advanced: it is very simple at first because it a
 Unfortunately this event type resolution is present only in the filtering system in the right drawer and nowhere else. The sankey and the circle stacked bar charts allow to see quad classes and the root events but not the further event types which are subdivisions of root events.
 
 ### Target audience, motivation
+
 (We put this section at the end, it is easier)
 The target audience can be anyone: GDELT experts who want to have a good tool to visualize their data or simply curious people who want to see connections between countries, what countries talk about their country, etc.
 
@@ -169,4 +170,4 @@ It seems that our visualization works pretty well now. We corrected the majority
 But in general our visualization allows us to learn more about general links between countries. For example it may be surprising to see that, if we click on Egypt, India is one of the countries talking the most about it. Probably there are some connections or interests between the two countries which are worth investigating further. And this way we can learn a lot of things about other "less known" countries.  
 
 ### Peer assessment
-For the 3 of us it is yes to all four questions.
+For the 3 of us it is yes to all four questions. We are a proficient team and we were pretty motivated by this project !

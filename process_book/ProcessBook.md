@@ -114,6 +114,9 @@ This way we can have much more details about the root events
 ### The tutorial
 We added a simple "tutorial" consisting of popups which open as the user navigates the visualization and explain what is what.
 
+### One feature we forgot
+If you click on the sankey links leading from quad classes to countries in the bottom diagram then the map will focus on the corresponding countries, which may be easier to observe faster what are the places our selected country is focusing on with respect to that country.
+
 ## Final remarks
 As the data we display needs to be online and the whole data weighted over 200 GB, we had to select a small interval of data to keep and display. We chose to keep the events that happened between November 20th and December 19th 2017. Moreover, we had to limit the maximum aggregate size to 3 days. That means that the user will be able to see 3 days of events at most at the same time. We chose to set this limit because it took too long to process a bigger amount of data for the user experience to be enjoyable.
 
@@ -137,6 +140,28 @@ The same way we show the news flow edges when we hover a sankey link we could ha
 Our filtering system is pretty advanced: it is very simple at first because it allows to show the distribution of events by only the top four quad classes but the user can unroll those if he wants to filter by root events (20 of them - 5 per quad class). However the user can also go further and select the Depth 2 option. This way he will be able to even unroll the root events and filter by them:
 ![alt text](images/event_resolution.png)
 Unfortunately this event type resolution is present only in the filtering system in the right drawer and nowhere else. The sankey and the circle stacked bar charts allow to see quad classes and the root events but not the further event types which are subdivisions of root events.
+
+### Target audience, motivation
+(We put this section at the end, it is easier)
+The target audience can be anyone: GDELT experts who want to have a good tool to visualize their data or simply curious people who want to see connections between countries, what countries talk about their country, etc.
+
+Our motivation is that we absolutely want to do something with this GDELT dataset. That thing is amazing ! Its purpose is to monitor the world, in a way and, even if it still has some shortcomings, it is really well cleaned and structured. (To be honest two of us wanted to work on this dataset in the ADA class but couldn't because our proposition was not accepted by the TAs so it is also nice to be able to work on it in this class!)
+
+### Dataset
+
+The dataset comes from the GDELT project, we used some simple preprocessing steps to get the columns we wanted but otherwise the dataset was already very clean without that (be careful: there are two GDELT versions: 1.0 and 2.0, we used 1.0 because it is simpler. 2.0 is updated every 15 minutes, but there is really a lot of data to process !)
+
+### Exploratory data analysis
+
+The GDELT website already contains a lot of visualizations which were really helpful for gaining insights about the data ! We also used some CSV viewers to see what the data looks like. When we understood how the QuadClass/RootEventCode/EventCode system works we were pretty sure our project is feasible at that point!
+
+### Designs
+We considered a bunch of ways of showing our data. The deviations were mainly focused on the sankey diagram. We really wanted to use it (maybe a little too much) but the flow was not really making sense in the first iterations. But we are really satisfied with the idea we got in our last iteration, the flow concept is making a lot of sense here !
+Otherwise the other parts of the visualizations were more additions than deviations (the stacked bar chart, the circle details, the range time line, the filter depth and so on...)
+
+### Deviation
+We did not deviate from our core idea: showing the news flows between different countries even if our implementation and visualization ideas varied with time.
+
 
 ### What did we learn from our visualization, does it work well ?
 It seems that our visualization works pretty well now. We corrected the majority of bugs and we are pretty satisfied with it. The main goal was to visualize this network flow from countries to countries and this seems to be quite good. Then we cannot say we learned anything really special: Most countries talk the most about themselves (we wanted to verify if it is true that the US speak mainly about themselves, which seems to be the case. But further they speak about some countries which were quite expected like Russia, Israel, North Korea, Canada, ...). An interesting insight was also to observe the Middle East and to see that the US still talk a lot about Saudi Arabia, for example. One problematic thing with our dataset is that there are a looot of news from the US so they appear in pretty every sankey diagram. At one point we thought about using the "ratio" of news per country because of this. The idea was for example to say: "60% of US news talk about themselves, 10% about Russia, 10% about North Korea and so on" and to use this relative measure for the sankey diagram instead of the "absolute" one (the total number of news we use). On the other side there are too many countries for which we have very few news. But probably the GDELT dataset will become better with time and that is the good thing with our visualization: as GDELT becomes better our visualization becomes better !

@@ -122,7 +122,10 @@ function buildAccordion() {
                     "id": id,
                     "class": "event_checkbox",
                     "data-code": cameoElem.CAMEOEVENTCODE
-                }).change(() => selectedEventCodesChanged = true)
+                }).change(() => {
+                    selectedEventCodesChanged = true;
+                    $("#pending_changes").show(500);
+                })
             ).append(
                 $("<div/>").addClass("state p-success").append(
                     $("<label>" + cameoElem.CAMEOEVENTCODE + ". " + upperFirstLetters(cameoElem.EVENTDESCRIPTION) + "</label>").attr({
@@ -158,8 +161,9 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
                         right: "-" + sideMenu.width() + "px"
                     }, 200);
                     if (selectedEventCodesChanged === true) {
-                        containerEventSelection.trigger("changed", [new Set(containerEventSelection.find('.event_checkbox:checked').map((i, el) => $(el).attr("data-code")).get())]);
+                        $("#pending_changes").hide(500);
                         selectedEventCodesChanged = false;
+                        containerEventSelection.trigger("changed", [new Set(containerEventSelection.find('.event_checkbox:checked').map((i, el) => $(el).attr("data-code")).get())]);
                     }
                 }
             );

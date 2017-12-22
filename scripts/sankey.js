@@ -33,7 +33,7 @@ function getNameFromCode(code) {
 let color = d3.scaleOrdinal(d3.schemeCategory20);
 
 function groupByGetCount(array, f) {
-    return d3.nest().key(f).rollup(group => group.length).entries(array);
+    return d3.nest().key(f).entries(array);
 }
 
 function updateSankey() {
@@ -188,7 +188,7 @@ function updateSankey() {
                     d3.select(self).style(
                         "fill", color(d.humanName)
                     );
-                    console.log
+
                     overCanvas.removeFrom(map);
                     callback(null);
                 }
@@ -229,7 +229,16 @@ function updateSankey() {
 
             link.append("title")
                 .text(function (d) {
-                    return d.source.humanName + " → " + d.target.humanName + "\n" + format(d.value);
+                    // REC = Root Event Code
+                    const groupedByREC = d3.nest().key(row => row[EVENT_CODE_TYPE]).rollup(group => group.length).entries(d.data);
+                    const cameoDict = cameoData
+                        .filter(row => row["CAMEOEVENTCODE"].length === 2)
+                        .map(row => row["EVENTDESCRIPTION"]);
+                    function getRECName(index){
+                        return index in cameoDict ? cameoDict[index] : "Unclassified";
+                    }
+                    const info = groupedByREC.map(RECGroup => getRECName(RECGroup.key) + ": " + format(RECGroup.value)).join("\n");
+                    return d.source.humanName + " → " + d.target.humanName + "\n" + format(d.data.length) + " in total" + "\n" + info;
                 });
 
             node = node
@@ -311,9 +320,10 @@ function renderSankey() {
             // This part is for detecting which countries are the most representative
 
             mostRepresentativeCountries = groupByGetCount(filteredData, d => d[countriesCol])
-                .sort((a, b) => b.value - a.value)
+                .sort((a, b) => b.values.length - a.values.length)
                 .map(group => group.key)
                 .slice(0, COUNTRIES_TRUNCATE);
+
 
             const adaptedData = filteredData.map(row => {
                 if (mostRepresentativeCountries.indexOf(row[countriesCol]) >= 0) {
@@ -337,7 +347,11 @@ function renderSankey() {
                     break;
             }
 
+            console.log(grouped_bis)
+
             let grouped_2_bis = groupByGetCount(adaptedData, d => d[QUAD_CLASS_COL]);
+
+            console.log(grouped_2_bis)
 
             // NOTE Seems nasty, but it is just a function to remove duplicates from an array:
             // See https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array
@@ -363,7 +377,8 @@ function renderSankey() {
                 return {
                     source: nodesMapping[pair[0]],
                     target: nodesMapping[pair[1]],
-                    value: link.value,
+                    value: link.values.length,
+                    data: link.values,
                 };
             });
 
@@ -373,13 +388,15 @@ function renderSankey() {
                     return {
                         source: nodesMapping[quadClass],
                         target: nodesMapping[selectedCountry + "_target"],
-                        value: link.value,
+                        value: link.values.length,
+                        data: link.values,
                     };
                 } else {
                     return {
                         source: nodesMapping[selectedCountry + "_source"],
                         target: nodesMapping[quadClass],
-                        value: link.value,
+                        value: link.values.length,
+                        data: link.values,
                     }
                 }
             });

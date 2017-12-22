@@ -1,6 +1,6 @@
 .menu {
     background: #1f2c38;
-    z-index: 1;
+    z-index: 20;
     position: absolute;
 }
 
@@ -23,7 +23,7 @@
 }
 
 #pull_bottom {
-    left: 50%;
+    left: 46%;
     width: 8%;
     top: -30px;
     height: 30px;
@@ -36,7 +36,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(34,34,34, 0.7);
+    background: rgba(34, 34, 34, 0.7);
     z-index: 1000;
 }
 
@@ -99,27 +99,28 @@
 }
 
 @-webkit-keyframes spin {
-    0%   {
-        -webkit-transform: rotate(0deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-        -ms-transform: rotate(0deg);  /* IE 9 */
-        transform: rotate(0deg);  /* Firefox 16+, IE 10+, Opera */
+    0% {
+        -webkit-transform: rotate(0deg); /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(0deg); /* IE 9 */
+        transform: rotate(0deg); /* Firefox 16+, IE 10+, Opera */
     }
     100% {
-        -webkit-transform: rotate(360deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-        -ms-transform: rotate(360deg);  /* IE 9 */
-        transform: rotate(360deg);  /* Firefox 16+, IE 10+, Opera */
+        -webkit-transform: rotate(360deg); /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(360deg); /* IE 9 */
+        transform: rotate(360deg); /* Firefox 16+, IE 10+, Opera */
     }
 }
+
 @keyframes spin {
-    0%   {
-        -webkit-transform: rotate(0deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-        -ms-transform: rotate(0deg);  /* IE 9 */
-        transform: rotate(0deg);  /* Firefox 16+, IE 10+, Opera */
+    0% {
+        -webkit-transform: rotate(0deg); /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(0deg); /* IE 9 */
+        transform: rotate(0deg); /* Firefox 16+, IE 10+, Opera */
     }
     100% {
-        -webkit-transform: rotate(360deg);  /* Chrome, Opera 15+, Safari 3.1+ */
-        -ms-transform: rotate(360deg);  /* IE 9 */
-        transform: rotate(360deg);  /* Firefox 16+, IE 10+, Opera */
+        -webkit-transform: rotate(360deg); /* Chrome, Opera 15+, Safari 3.1+ */
+        -ms-transform: rotate(360deg); /* IE 9 */
+        transform: rotate(360deg); /* Firefox 16+, IE 10+, Opera */
     }
 }
 
@@ -185,7 +186,7 @@
     width: 40%;
     height: 100%;
     margin-left: -40%;
-    z-index: 2;
+    z-index: 10;
     position: fixed;
     background: rgba(24, 34, 43, 0.9);
     transition: 0.2s;
@@ -204,7 +205,7 @@
     align-items: center;
 }
 
-#country_close_btn i{
+#country_close_btn i {
     color: #496684;
 }
 
@@ -274,7 +275,18 @@
     height: 100px;
 }
 
-#tuto_container{
+#pending_changes {
+    position: absolute;
+    left: 40%;
+    bottom: 20%;
+    width: 20%;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    display: none;
+}
+
+#tuto_container {
     position: absolute;
     background-color: black;
     padding: 20px;
@@ -291,7 +303,7 @@
     margin: 0 auto;
 }
 
-#shortcuts_container{
+#shortcuts_container {
     position: absolute;
     display: none;
     background-color: black;
@@ -304,44 +316,28 @@
 }
 
 .bar {
-  fill: steelblue;
+    fill: steelblue;
 }
 
 .bar:hover {
-  fill: brown;
+    fill: brown;
 }
 
-.axis--x line {
+.axis--x line, .axis--x path, .axis--y line, .axis--y path {
     stroke: white;
 }
 
-.axis--x path {
-  stroke: white;
-}
-
-.axis--x text{
-  fill: white;
-}
-
-.axis--y line {
-    stroke: white;
-}
-
-.axis--y path {
-  stroke: white;
-}
-
-.axis--y text{
-  fill: white;
+.axis--x text, .axis--y text {
+    fill: white;
 }
 
 .leaflet-popup-content-wrapper {
-  background-color: #000
+    background-color: #000;
 }
 
 html {
     height: 100%;
-    position: relative;;
+    position: relative;
 }
 
 body {

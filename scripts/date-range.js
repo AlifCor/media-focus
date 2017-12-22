@@ -7,8 +7,12 @@ $(() => {
     let lastSelectedMin = yesterday, lastSelectedMax = today;
 
     slider.bind("valuesChanged", function (e, data) {
-        const endDate = new Date(data.values.max);
-        let tempDate = new Date(data.values.min);
+        if (!areSameDates(data.values.min, lastSelectedMin) || !areSameDates(data.values.max, lastSelectedMax)) {
+            $("#pending_changes").show(500);
+        }
+        else {
+            $("#pending_changes").hide(500);
+        }
     }).dateRangeSlider({
         arrows: false,
         wheelMode: "zoom",
@@ -37,6 +41,7 @@ $(() => {
                 lastSelectedMin = dateValues.min;
                 lastSelectedMax = dateValues.max;
 
+                $("#pending_changes").hide(500);
                 slider.trigger("changed", [dateValues]);
             }
         }

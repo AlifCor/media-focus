@@ -79,7 +79,7 @@ So obviously we chose to keep all the events.
 
 If we look on our map we have the circles which show the distribution of data. But how about we try to allow the user to look at the details for each circle if he clicks on them ?
 For example, we can have the countries which talk the most about that particular location. But we could also have the events so let's do a stacked bar chart for this:
-
+![alt text](images/sbc_sketch.jpg)
 We might also do something more: we might show all the source -> target lines in blue and unzoom our map to see which countries are talking about this particular circle.
 
 ### circles: the hovering problem
@@ -95,23 +95,41 @@ Our solution for that will simply be to vary the radius of the circles depending
 ### The loading problem
 One problem is that, even after preprocessing our data and removing a lot of stuff, we had a lot of news remaining (approximately 160000 for one single day). This is fine for one day (approximately 2-3 seconds to load) but it starts becoming annoying if we want to show data for more than that. For example, we thought about showing the data for one month or one week or even one year. But this is simply impossible. We already tried to aggregate the data but even after that there are too many events. We also thought about randomly removing data but this doesn't make a lot of sense. So, for now, we will show the data for one day. If we have time we will add a timeline for the user to be able to select the day they want.
 
+Edit: we decided to create a range time slider where the user can select up to 3 consecutive days to show together (you can change the source code to change that number if you want but the loading time starts getting bigger !)
+
 ### The missing source locations
 Around 25% of the event have an unknown source location. However, when we looked at which website those news came from, we saw almost all of them came from websites that are not affiliated with any country. For this reason, we decided to create a new category named "International" that contains every news mentionned above.
-
-### Towards a beautiful visualization: jQuery UI ?
-The remarks of the teacher had a great impact on us. As suggested by him, we decided to make one person entirely responsible for the style. This lead to many improvements of the design. 
-
-The first problem tackled was the side menu. We decided at first to use the jQueryUI library to have something really eye catching and applied it to the checkboxes. Sadly, it was still quite ugly so we discarded it. In the end we used multiple different libraries. It required many hours of searching and documentation reading but we believe that beauty has a price :)
 
 ## Week 13
 ### The hovering deadlock problem
 We had an annoying problem with the sankey links hover functionality. When we hover upon one sankey link we want to show all the circles corresponding to that link in blue. We also show a blue line between the country geolocation (we have a file for that) and the geolocation where the event occured. The line and the circle size increase with the number of events. This was working fine on the Github pages server or on our powerful home computers. But unfortunately it was creating deadlocks on our laptop (at least on Ubuntu Linux): there are many events to draw so let's say the user hovers on one link and unhovers very rapidly after that. This will launch two asynchronous functions: one for drawing and one for removing the canvas. But the website would often get stucked at this point (probably because the two asynchronous functions were accessing the canvas at the same time). So we found a solution: we used the d3-queue module and but those function in a queue so that they are executed one after the other even if they are asynchronous. This solved our problem even on laptops !
 
-### Beauty-tuning
-The work on style continued. This time we took a step further: we checked the color palettes online and made sure to only use coherent colors. Some of the valuable tools include [this one](http://www.colorhexa.com/) and [that one](http://www.colortools.net/color_compare_colors.html).
+### More details on sankey and circle bar charts about event types:
+One of our problems with respect to event types is that we cannot show all of them in our sankey diagram/stacked bar charts. The only viable solution is to show the 4 quad classes (Verbal Cooperation, Verbal Conflict, Material Cooperation and Material Conflict). But we have found a way to show info about the root events (there are 20 of them, 5 per quad class). We show images because they are self-explanatory:
+![alt text](images/sankey_root_events.png)
+![alt text](images/barchart_root_events.png)
 
-## Final remarques
+This way we can have much more details about the root events
+## Final remarks
 As the data we display needs to be online and the whole data weighted over 200 GB, we had to select a small interval of data to keep and display. We chose to keep the events that happened between November 20th and December 19th 2017. Moreover, we had to limit the maximum aggregate size to 3 days. That means that the user will be able to see 3 days of events at most at the same time. We chose to set this limit because it took too long to process a bigger amount of data for the user experience to be enjoyable.
 
 ### Possible improvements
-When hovering a country that has lots of sources on the Sankey diagram, the visualisation becomes overloaded with links, and unfortunately, we have not had the time to find a good solution to this problem without removing information.
+
+#### Bundling of the edges
+When hovering a country that has lots of sources on the Sankey diagram (typically the US), the visualisation becomes overloaded with links, and unfortunately, we have not had the time to find a good solution to this problem without removing information.
+If we had time, we would have implemented one of the two following solutions:
+* If we have too many links then we cut out the thinner ones or we aggregate them so that, instead of having a lot of big and small links we only have big links carrying all the information
+* A little more difficult to do in Leaflet: bundle the links instead of drawing straight lines as we show on the following sketch:
+![alt text](images/bundle_sketch.jpg)
+* Or simply a solution between the two (not as difficult as the curved bundling and we don't lose information as in the first solution) : we bundle in straight lines and we "release" the lines once the big line comes near the country (in this solution we can at least see how many news each country is sending):
+![alt text](images/bundle_linear.jpg)
+
+
+#### Hovering for stacked bar charts
+The same way we show the news flow edges when we hover a sankey link we could have shown these edges when we hover a rectangle in our stacked bar chart for a given circle. unfortunately we ran out of time and weren't able to do that.
+
+#### What to do with that depth ?
+
+Our filtering system is pretty advanced: it is very simple at first because it allows to show the distribution of events by only the top four quad classes but the user can unroll those if he wants to filter by root events (20 of them - 5 per quad class). However the user can also go further and select the Depth 2 option. This way he will be able to even unroll the root events and filter by them:
+![alt text](images/event_resolution.png)
+Unfortunately this event type resolution is present only in the filtering system in the right drawer and nowhere else. The sankey and the circle stacked bar charts allow to see quad classes and the root events but not the further event types which are subdivisions of root events.

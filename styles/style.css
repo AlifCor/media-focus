@@ -297,16 +297,19 @@
 
 #tuto_container {
     position: absolute;
-    background-color: black;
-    padding: 20px;
     left: 50%;
     top: 70%;
     transform: translate(-50%, -50%);
     display: none
 }
 
-#tuto {
+.tuto_container {
+    background-color: #24303B;
+    padding: 20px;
     fill: "white";
+}
+
+#tuto {
     text-align: center;
     margin: 0 auto;
 }
@@ -314,12 +317,27 @@
 #shortcuts_container {
     position: absolute;
     display: none;
-    background-color: black;
-    fill: "white";
-    padding: 20px;
     left: 20px;
     bottom: 20px;
-    opacity: 0.6;
+    opacity: 0.8;
+}
+
+#filtering_tuto_container {
+    display: none;
+    position: absolute;
+    width: 200px;
+    right: 250px;
+    top: 25%;
+    z-index: 25;
+}
+
+#time_tuto_container {
+    display: none;
+    position: absolute;
+    width: 300px;
+    right: 20%;
+    bottom: 15%;
+    z-index: 25;
 }
 
 .bar {

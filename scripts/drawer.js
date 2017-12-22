@@ -172,7 +172,19 @@ d3.tsv("CAMEO.eventcodes.txt", function (data) {
                     sideMenu.stop();
                     sideMenu.animate({
                         right: "0px"
-                    }, 200);
+                    }, 200, "swing", () => {
+                        if(!alreadyOpened.filtering){
+                            console.log("DRAWING")
+                            const filteringTutoContainer = $("#filtering_tuto_container");
+                            filteringTutoContainer.fadeIn(1000, () => {
+                                setTimeout(() => {
+                                    filteringTutoContainer.fadeOut(1000);
+                                }, 6000)
+                            })
+                            alreadyOpened.filtering = true;
+                        }
+
+                    });
                 }
             );
         });

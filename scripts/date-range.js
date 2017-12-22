@@ -51,7 +51,19 @@ $(() => {
             bottomMenu.stop();
             bottomMenu.animate({
                 bottom: "0"
-            }, 200);
+            }, 200, "swing", () => {
+                if(!alreadyOpened.time){
+                    const timeTutoContainer = $("#time_tuto_container");
+                    timeTutoContainer.fadeIn(1000, () => {
+                        setTimeout(() => {
+                            timeTutoContainer.fadeOut(1000);
+                        }, 6000);
+                    })
+                    alreadyOpened["time"] = true;
+                }
+
+
+            });
         }
     );
 })

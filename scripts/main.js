@@ -11,6 +11,8 @@ const LONG_COL = "ActionGeo_Long";
 
 let alreadyOpened = {
     sankey: false,
+    filtering: false,
+    time: false,
 }
 
 const getFilteredEvents = (function () {
@@ -433,6 +435,7 @@ function showCountryDetails(countryCode) {
     renderSankey();
     const sankeyTitle1 = $("#sankey_title_1");
     const sankeyTitle2 = $("#sankey_title_2");
+
     if(alreadyOpened.sankey){
         sankeyTitle1.css("display", "block");
         sankeyTitle2.css("display", "block");
@@ -444,6 +447,7 @@ function showCountryDetails(countryCode) {
         setTimeout(() => {
             sankeyTitle2.animate({opacity: 1}, 1000);
         }, 8000);
+        alreadyOpened.sankey = true;
     }
 
 }

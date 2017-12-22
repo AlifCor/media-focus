@@ -13,7 +13,6 @@ const getFilteredEvents = (function () {
     let selectedEvents;
     $(() => $("#accordion").on("changed", (event, selectedCodes) => {
         selectedEvents = selectedCodes;
-        console.log(selectedEvents)
     }));
 
     return function (callback) {
@@ -62,13 +61,8 @@ const getFilteredEvents = (function () {
             if(selectedEvents.size > 0){
                 const filteringLevel = selectedEvents.values().next().value.length;
                 const selectedEventsNonZero = new Set((Array.from(selectedEvents)).map(code => parseInt(code).toString()));
-                getAllData(data => {
-                    const testData = data.slice(0, 100);
-                    console.log(testData)
-                    const testDataFiltered = testData.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel, el[EVENT_CODE_TYPE])))
-                    console.log(testDataFiltered)
-                    callback(data.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel, el[EVENT_CODE_TYPE]))))
-                });
+                getAllData(data =>
+                    callback(data.filter(el => selectedEvents.has(eventCodePadding(el["EventCode"], filteringLevel, el[EVENT_CODE_TYPE])))));
             }
         }
         else {
@@ -144,6 +138,26 @@ $(() => {
     map.on("zoomend", () => renderMainCanvas());
     containerEventSelection.on("changed", () => renderMainCanvas(force = true));
     renderMainCanvas(force = true);
+
+    let tutoContainer = $("#tuto_container");
+    let shortcutsContainer = $("#shortcuts_container");
+
+    setTimeout(() => {
+
+        tutoContainer.css("display", "block");
+        tutoContainer.animate({opacity: 1}, 1000, () => {
+            setTimeout(() => {
+                tutoContainer.animate({opacity: 0}, 1000, () => tutoContainer.css("display", "none"));
+            }, 5000)
+
+        })
+    }, 3000);
+
+    setTimeout(() => {
+        shortcutsContainer.css("display", "block");
+        shortcutsContainer.animate({opacity: 0.6}, 1000);
+    }, 5000);
+
 });
 
 function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) {

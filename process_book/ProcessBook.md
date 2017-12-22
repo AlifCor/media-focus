@@ -98,9 +98,17 @@ One problem is that, even after preprocessing our data and removing a lot of stu
 ### The missing source locations
 Around 25% of the event have an unknown source location. However, when we looked at which website those news came from, we saw almost all of them came from websites that are not affiliated with any country. For this reason, we decided to create a new category named "International" that contains every news mentionned above.
 
+### Towards a beautiful visualization: jQuery UI ?
+The remarks of the teacher had a great impact on us. As suggested by him, we decided to make one person entirely responsible for the style. This lead to many improvements of the design. 
+
+The first problem tackled was the side menu. We decided at first to use the jQueryUI library to have something really eye catching and applied it to the checkboxes. Sadly, it was still quite ugly so we discarded it. In the end we used multiple different libraries. It required many hours of searching and documentation reading but we believe that beauty has a price :)
+
 ## Week 13
 ### The hovering deadlock problem
 We had an annoying problem with the sankey links hover functionality. When we hover upon one sankey link we want to show all the circles corresponding to that link in blue. We also show a blue line between the country geolocation (we have a file for that) and the geolocation where the event occured. The line and the circle size increase with the number of events. This was working fine on the Github pages server or on our powerful home computers. But unfortunately it was creating deadlocks on our laptop (at least on Ubuntu Linux): there are many events to draw so let's say the user hovers on one link and unhovers very rapidly after that. This will launch two asynchronous functions: one for drawing and one for removing the canvas. But the website would often get stucked at this point (probably because the two asynchronous functions were accessing the canvas at the same time). So we found a solution: we used the d3-queue module and but those function in a queue so that they are executed one after the other even if they are asynchronous. This solved our problem even on laptops !
+
+### Beauty-tuning
+The work on style continued. This time we took a step further: we checked the color palettes online and made sure to only use coherent colors. Some of the valuable tools include [this one](http://www.colorhexa.com/) and [that one](http://www.colortools.net/color_compare_colors.html).
 
 ## Final remarques
 As the data we display needs to be online and the whole data weighted over 200 GB, we had to select a small interval of data to keep and display. We chose to keep the events that happened between November 20th and December 19th 2017. Moreover, we had to limit the maximum aggregate size to 3 days. That means that the user will be able to see 3 days of events at most at the same time. We chose to set this limit because it took too long to process a bigger amount of data for the user experience to be enjoyable.

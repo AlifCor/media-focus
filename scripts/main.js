@@ -507,13 +507,13 @@ $.get(geoJSONData, function (data) {
 });
 
 $(document).keydown(function (event) {
-    if (event.key === "Control") {
+    if (event.key === "Control" || event.key === "Shift") {
         paneGeojson.style.zIndex = 390;
     }
 })
 
 $(document).keyup(function (event) {
-    if (event.key === "Control") {
+    if (event.key === "Control" || event.key === "Shift") {
         paneGeojson.style.zIndex = 400;
     }
 })

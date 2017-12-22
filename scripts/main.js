@@ -1,23 +1,50 @@
-let currentDate = new Date(2017, 11, 19);
-
+let allDates = [new Date(2017, 11, 19)];
 const getFilteredEvents = (function () {
     let selectedEvents;
     $(() => $("#accordion").on("changed", (event, selectedCodes) => selectedEvents = selectedCodes));
 
     return function (callback) {
-        const dateFilename = "data_processing/data/" +
-            currentDate.getFullYear() + "" +
-            (currentDate.getMonth() + 1) + "" +
-            currentDate.getDate() + ".csv";
+        function filenameFromDate(currentDate){
+            return "data_processing/data/" +
+                currentDate.getFullYear() + "" +
+                (currentDate.getMonth() + 1) + "" +
+                currentDate.getDate() + ".csv";
+        }
+
+        function getAllData(callback){
+            let allData = [];
+            function loadFile(filename, callback){
+                d3.csv(filename, (data) => {
+                    console.log("LOADING FOR", filename)
+                    allData = allData.concat(data);
+                    callback(null);
+                });
+            }
+            let queueDateLoading = d3.queue(1);
+
+            allDates.forEach(date => {
+                const filename = filenameFromDate(date);
+                queueDateLoading.defer(loadFile, filename);
+            })
+
+            queueDateLoading.await(function(error) {
+                if(error){
+                    throw error;
+                }
+                console.log(allData.length)
+                callback(allData);
+            });
+        }
+
+
         if (selectedEvents !== undefined) {
             const filteringLevel = selectedEvents.values().next().length;
 
-            d3.csv(dateFilename, data => callback(data.filter(el => selectedEvents.has(el["EventCode"].substr(0, filteringLevel)))));
-
+            getAllData(data => callback(data.filter(el => selectedEvents.has(el["EventCode"].substr(0, filteringLevel)))));
         }
         else {
             //The user never changed the selection inside the drawer => return all data
-            d3.csv(dateFilename, data => callback(data));
+            getAllData(data => callback(data));
         }
     }
 }());
@@ -78,7 +105,17 @@ $(() => {
     });
 
     $("#slider").bind("valuesChanged", function(e, data){
-        currentDate = new Date(data.values.min);
+        const endDate = new Date(data.values.max);
+        let tempDate = new Date(data.values.min);
+        allDates = [];
+
+        while(tempDate.getDate() !== endDate.getDate()){
+            allDates.push(new Date(tempDate));
+            tempDate.setDate(tempDate.getDate() + 1);
+        }
+
+        console.log("Slider changed: " + allDates)
+
         renderMainCanvas(force = true);
     });
 
@@ -101,8 +138,6 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
 
     const grouped = d3.nest()
         .key(d => [groupingFunction(d[LAT_COL]), groupingFunction(d[LONG_COL])])
-        //.rollup(group => [group.length, d3.nest().key(d => d[SOURCE_COUNTRY_COL]).entries(group),
-        //    [meand3(group, LAT_COL), meand3(group, LONG_COL)]])
         .entries(dataToShow);
     const currentZoom = map.getZoom();
     grouped.forEach((data, index) => {
@@ -178,7 +213,6 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 let xScale = d3.scaleLinear().rangeRound([0, width]);
                 let yScale = d3.scaleBand().rangeRound([height, 0]).padding(0.1);
                 let color = d3.scaleOrdinal(d3.schemeCategory20);
-                console.log(eventsNestedQuadClass)
                 let maxTotal = d3.max(eventsNestedQuadClass, d => d["total"]);
                 let xAxis = d3.axisBottom(xScale).ticks(maxTotal >= 5 ? 5 : maxTotal);
                 let yAxis = d3.axisLeft(yScale);
@@ -188,8 +222,6 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                 yScale.domain(eventsNestedQuadClass.map(d => d["country"]));
                 xScale.domain([0, maxTotal]).nice();
 
-                console.log("LAYERS", layers)
-
                 let layer = g.selectAll(".layer")
                     .data(layers)
                     .enter().append("g")
@@ -198,18 +230,6 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
                     .on("mouseover", mouseOverSBCReact)
                     .on("mouseout", mouseOutSBCReact);
 
-                /*
-                let hoverTitles =
-                    layer.append("title")
-                    .text(function (d, i) {
-                        //const filteredCountryQC = data.values.filter(row =>
-                        //    row[SOURCE_COUNTRY_COL] === d.data["country"])
-                        console.log("DATA d", d)
-                        const filteredCountryQC = data.values.filter(row =>
-                            true)
-                        return i;
-                    });
-                */
                 // SBC = Stacked bar chart
                 function mouseOverSBCReact(){
                     d3.select(this)
@@ -232,8 +252,6 @@ function drawData(dataToShow, groupingFunction, canvas, color, circleClickable) 
 
                     .append("title")
                     .text(function (d, i) {
-                        // const filteredCountryQC = data.values.filter(row =>
-                        //    row[SOURCE_COUNTRY_COL] === d.data["country"])
                         const quadClassEventsStacked = QUAD_CLASS_KEYS.reduce((stacked, humanQuadClass) => {
                             const toAdd = d.data[humanQuadClass];
                             if(stacked.length > 0){
@@ -369,7 +387,6 @@ function renderMainCanvas(force = false, doBefore = startLoadingScreen, doAfter 
 let overCanvas = L.canvas();
 
 function renderOverCanvas(filterFun, callback) {
-    overCanvas.removeFrom(map);
     overCanvas = L.canvas();
     getFilteredEvents((filteredEvents) => {
         sourceTargetFilteredEvents = filteredEvents.filter(filterFun);
@@ -393,13 +410,11 @@ let svg = d3.select("#container_map").select("svg"),
 
 let canvas = L.canvas();
 let canvasFilter = L.canvas();
-// let currentClusteringLevel = -1;
 
 let geoJSONData = "data/custom.geo.json";
 let customStyle = {
     stroke: false,
     fillOpacity: 0,
-    //weight: 1.2,
     color: "black",
     cursor: "pointer",
 };
@@ -436,15 +451,6 @@ $.get(geoJSONData, function (data) {
     }).addTo(map)
     d3.json("data/countries_latlng.json", function(data){
         countriesLatLng = data;
-        /*
-        L.polyline([countriesLatLng["CAN"], countriesLatLng["USA"]], {color: "green", weight: 0.1}).addTo(map);
-        L.circleMarker(countriesLatLng["USA"], {
-            renderer: canvas,
-            stroke: false,
-            fillColor: "green",
-            radius: 30,
-        }).addTo(map);
-        */
     })
 
 });

@@ -124,7 +124,7 @@ function updateSankey() {
                     d3.select(self).attr(
                         "stroke", "#000",
                     );
-                    overCanvas.removeFrom(map);
+                    overCanvas.remove();
                     callback(null);
                 }
                 queueHovering.defer(removeOverCanvas);
@@ -184,12 +184,11 @@ function updateSankey() {
             function handleMouseOutNode(d){
                 let self = this;
                 function removeOverCanvas(callback){
-                    console.log("out")
                     d3.select(self).style(
                         "fill", color(d.humanName)
                     );
 
-                    overCanvas.removeFrom(map);
+                    //overCanvas.removeFrom(map);
                     callback(null);
                 }
                 queueHovering.defer(removeOverCanvas);
@@ -347,11 +346,7 @@ function renderSankey() {
                     break;
             }
 
-            console.log(grouped_bis)
-
             let grouped_2_bis = groupByGetCount(adaptedData, d => d[QUAD_CLASS_COL]);
-
-            console.log(grouped_2_bis)
 
             // NOTE Seems nasty, but it is just a function to remove duplicates from an array:
             // See https://stackoverflow.com/questions/9229645/remove-duplicate-values-from-js-array

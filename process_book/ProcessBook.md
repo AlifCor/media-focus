@@ -110,6 +110,10 @@ One of our problems with respect to event types is that we cannot show all of th
 ![alt text](images/barchart_root_events.png)
 
 This way we can have much more details about the root events
+
+### The tutorial
+We added a simple "tutorial" consisting of popups which open as the user navigates the visualization and explain what is what.
+
 ## Final remarks
 As the data we display needs to be online and the whole data weighted over 200 GB, we had to select a small interval of data to keep and display. We chose to keep the events that happened between November 20th and December 19th 2017. Moreover, we had to limit the maximum aggregate size to 3 days. That means that the user will be able to see 3 days of events at most at the same time. We chose to set this limit because it took too long to process a bigger amount of data for the user experience to be enjoyable.
 
@@ -133,3 +137,11 @@ The same way we show the news flow edges when we hover a sankey link we could ha
 Our filtering system is pretty advanced: it is very simple at first because it allows to show the distribution of events by only the top four quad classes but the user can unroll those if he wants to filter by root events (20 of them - 5 per quad class). However the user can also go further and select the Depth 2 option. This way he will be able to even unroll the root events and filter by them:
 ![alt text](images/event_resolution.png)
 Unfortunately this event type resolution is present only in the filtering system in the right drawer and nowhere else. The sankey and the circle stacked bar charts allow to see quad classes and the root events but not the further event types which are subdivisions of root events.
+
+### What did we learn from our visualization, does it work well ?
+It seems that our visualization works pretty well now. We corrected the majority of bugs and we are pretty satisfied with it. The main goal was to visualize this network flow from countries to countries and this seems to be quite good. Then we cannot say we learned anything really special: Most countries talk the most about themselves (we wanted to verify if it is true that the US speak mainly about themselves, which seems to be the case. But further they speak about some countries which were quite expected like Russia, Israel, North Korea, Canada, ...). An interesting insight was also to observe the Middle East and to see that the US still talk a lot about Saudi Arabia, for example. One problematic thing with our dataset is that there are a looot of news from the US so they appear in pretty every sankey diagram. At one point we thought about using the "ratio" of news per country because of this. The idea was for example to say: "60% of US news talk about themselves, 10% about Russia, 10% about North Korea and so on" and to use this relative measure for the sankey diagram instead of the "absolute" one (the total number of news we use). On the other side there are too many countries for which we have very few news. But probably the GDELT dataset will become better with time and that is the good thing with our visualization: as GDELT becomes better our visualization becomes better !
+
+But in general our visualization allows us to learn more about general links between countries. For example it may be surprising to see that, if we click on Egypt, India is one of the countries talking the most about it. Probably there are some connections or interests between the two countries which are worth investigating further. And this way we can learn a lot of things about other "less known" countries.  
+
+### Peer assessment
+For the 3 of us it is yes to all four questions.
